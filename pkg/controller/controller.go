@@ -55,7 +55,6 @@ type Controller struct {
 	syncPeriod time.Duration
 }
 
-var _ amc.Snapshotter = &Controller{}
 var _ amc.Deleter = &Controller{}
 
 func New(
@@ -88,17 +87,11 @@ func (c *Controller) Run() {
 
 	// Start Cron
 	c.cronController.StartCron()
-	// Stop Cron
-	defer c.cronController.StopCron()
 
 	// Watch x  TPR objects
 	go c.watchMemcached()
-	// Watch DatabaseSnapshot with labelSelector only for Memcached
-	go c.watchDatabaseSnapshot()
 	// Watch DeletedDatabase with labelSelector only for Memcached
 	go c.watchDeletedDatabase()
-	// hold
-	hold.Hold()
 }
 
 // Blocks caller. Intended to be called as a Go routine.
@@ -165,33 +158,8 @@ func (c *Controller) watchMemcached() {
 	cacheController.Run(wait.NeverStop)
 }
 
-func (c *Controller) watchDatabaseSnapshot() {
-	labelMap := map[string]string{
-		// TODO: Use appropriate ResourceKind.
-		tapi.LabelDatabaseKind: tapi.ResourceKindMemcached,
-	}
-	// Watch with label selector
-	lw := &cache.ListWatch{
-		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-			return c.ExtClient.Snapshots(metav1.NamespaceAll).List(
-				metav1.ListOptions{
-					LabelSelector: labels.SelectorFromSet(labelMap).String(),
-				})
-		},
-		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
-			return c.ExtClient.Snapshots(metav1.NamespaceAll).Watch(
-				metav1.ListOptions{
-					LabelSelector: labels.SelectorFromSet(labelMap).String(),
-				})
-		},
-	}
-
-	amc.NewSnapshotController(c.Client, c.ApiExtKubeClient, c.ExtClient, c, lw, c.syncPeriod).Run()
-}
-
 func (c *Controller) watchDeletedDatabase() {
 	labelMap := map[string]string{
-		// TODO: Use appropriate ResourceKind.
 		tapi.LabelDatabaseKind: tapi.ResourceKindMemcached,
 	}
 	// Watch with label selector
@@ -216,7 +184,6 @@ func (c *Controller) watchDeletedDatabase() {
 func (c *Controller) ensureCustomResourceDefinition() {
 	log.Infoln("Ensuring CustomResourceDefinition...")
 
-	// TODO: Use appropriate ResourceType.
 	resourceName := tapi.ResourceTypeMemcached + "." + tapi.SchemeGroupVersion.Group
 	if _, err := c.ApiExtKubeClient.CustomResourceDefinitions().Get(resourceName, metav1.GetOptions{}); err != nil {
 		if !kerr.IsNotFound(err) {
@@ -238,7 +205,6 @@ func (c *Controller) ensureCustomResourceDefinition() {
 			Version: tapi.SchemeGroupVersion.Version,
 			Scope:   extensionsobj.NamespaceScoped,
 			Names: extensionsobj.CustomResourceDefinitionNames{
-				// TODO: Use appropriate const.
 				Plural:     tapi.ResourceTypeMemcached,
 				Kind:       tapi.ResourceKindMemcached,
 				ShortNames: []string{tapi.ResourceCodeMemcached},

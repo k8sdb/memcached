@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="5" failures="0" time="621.906535185">
-      <testcase name="Memcached Test General - should run successfully" classname="e2e Suite" time="85.08529993"></testcase>
-      <testcase name="Memcached Test DoNotPause should work successfully" classname="e2e Suite" time="55.109813239"></testcase>
-      <testcase name="Memcached Test Resume - should resume DormantDatabase successfully" classname="e2e Suite" time="120.104619099"></testcase>
-      <testcase name="Memcached Test Resume With original Memcached should resume DormantDatabase successfully" classname="e2e Suite" time="120.317659617"></testcase>
-      <testcase name="Memcached Test Resume With original Memcached Multiple times should resume DormantDatabase successfully" classname="e2e Suite" time="240.234634139"></testcase>
+  <testsuite tests="1" failures="1" time="301.053118013">
+      <testcase name="Memcached Test General - should run successfully" classname="e2e Suite" time="300.005420089">
+          <failure type="Failure">/home/maruf/go/src/github.com/k8sdb/memcached/test/e2e/memcached_test.go:77&#xA;Timed out after 300.000s.&#xA;Expected&#xA;    &lt;bool&gt;: false&#xA;to be true&#xA;/home/maruf/go/src/github.com/k8sdb/memcached/test/e2e/memcached_test.go:34</failure>
+          <system-out>[BeforeEach] Memcached&#xA;  /home/maruf/go/src/github.com/k8sdb/memcached/test/e2e/memcached_test.go:22&#xA;[It] should run successfully&#xA;  /home/maruf/go/src/github.com/k8sdb/memcached/test/e2e/memcached_test.go:77&#xA;�[1mSTEP�[0m: Create Memcached: memcached-2vdgfi&#xA;�[1mSTEP�[0m: Wait for Running memcached&#xA;</system-out>
+      </testcase>
+      <testcase name="Memcached Test DoNotPause should work successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Memcached Test Resume - should resume DormantDatabase successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Memcached Test Resume With original Memcached should resume DormantDatabase successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
+      <testcase name="Memcached Test Resume With original Memcached Multiple times should resume DormantDatabase successfully" classname="e2e Suite" time="0">
+          <skipped></skipped>
+      </testcase>
   </testsuite>

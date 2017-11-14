@@ -86,7 +86,7 @@ func (c *Controller) Run() {
 	c.ensureCustomResourceDefinition()
 
 	// Start Cron
-	c.cronController.StartCron()
+	c.cronController.StartCron() //#Later
 
 	// Watch x  TPR objects
 	go c.watchMemcached()

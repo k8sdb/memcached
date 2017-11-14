@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -48,7 +47,6 @@ func (c *Controller) create(memcached *tapi.Memcached) error {
 		return err
 	}
 	if matched {
-		//TODO: Use Annotation Key
 		memcached.Annotations = map[string]string{
 			"kubedb.com/ignore": "",
 		}
@@ -75,27 +73,13 @@ func (c *Controller) create(memcached *tapi.Memcached) error {
 	// Event for notification that kubernetes objects are creating
 	c.recorder.Event(memcached.ObjectReference(), core.EventTypeNormal, eventer.EventReasonCreating, "Creating Kubernetes objects")
 
-	// create Governing Service
-	governingService := c.opt.GoverningService
-	if err := c.CreateGoverningService(governingService, memcached.Namespace); err != nil {
-		c.recorder.Eventf(
-			memcached.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToCreate,
-			`Failed to create Service: "%v". Reason: %v`,
-			governingService,
-			err,
-		)
-		return err
-	}
-
 	// ensure database Service
 	if err := c.ensureService(memcached); err != nil {
 		return err
 	}
 
-	// ensure database StatefulSet
-	if err := c.ensureStatefulSet(memcached); err != nil {
+	// ensure database Deployment
+	if err := c.ensureDeployment(memcached); err != nil {
 		return err
 	}
 
@@ -162,15 +146,6 @@ func (c *Controller) matchDormantDatabase(memcached *tapi.Memcached) (bool, erro
 			memcached.Name, dormantDb.Name))
 	}
 
-	// Check InitSpec
-	initSpecAnnotationStr := dormantDb.Annotations[tapi.MemcachedInitSpec]
-	if initSpecAnnotationStr != "" {
-		var initSpecAnnotation *tapi.InitSpec
-		if err := json.Unmarshal([]byte(initSpecAnnotationStr), &initSpecAnnotation); err != nil {
-			return sendEvent(err.Error())
-		}
-	}
-
 	// Check Origin Spec
 	drmnOriginSpec := dormantDb.Spec.Origin.Spec.Memcached
 	originalSpec := memcached.Spec
@@ -206,8 +181,8 @@ func (c *Controller) ensureService(memcached *tapi.Memcached) error {
 	return nil
 }
 
-func (c *Controller) ensureStatefulSet(memcached *tapi.Memcached) error {
-	found, err := c.findStatefulSet(memcached)
+func (c *Controller) ensureDeployment(memcached *tapi.Memcached) error {
+	found, err := c.findDeployment(memcached)
 	if err != nil {
 		return err
 	}
@@ -215,14 +190,14 @@ func (c *Controller) ensureStatefulSet(memcached *tapi.Memcached) error {
 		return nil
 	}
 
-	// Create statefulSet for Memcached database
-	statefulSet, err := c.createStatefulSet(memcached)
+	// Create deployment for Memcached database
+	deployment, err := c.createDeployment(memcached)
 	if err != nil {
 		c.recorder.Eventf(
 			memcached.ObjectReference(),
 			core.EventTypeWarning,
 			eventer.EventReasonFailedToCreate,
-			"Failed to create StatefulSet. Reason: %v",
+			"Failed to create Deployment. Reason: %v",
 			err,
 		)
 		return err
@@ -234,13 +209,13 @@ func (c *Controller) ensureStatefulSet(memcached *tapi.Memcached) error {
 	}
 	memcached = _memcached
 
-	// Check StatefulSet Pod status
-	if err := c.CheckStatefulSetPodStatus(statefulSet, durationCheckStatefulSet); err != nil {
+	// Check Deployment Pod status
+	if err := c.checkDeploymentPodStatus(deployment, durationCheckDeployment); err != nil {
 		c.recorder.Eventf(
 			memcached.ObjectReference(),
 			core.EventTypeWarning,
 			eventer.EventReasonFailedToStart,
-			`Failed to create StatefulSet. Reason: %v`,
+			`Failed to create Deployment. Reason: %v`,
 			err,
 		)
 		return err
@@ -249,7 +224,7 @@ func (c *Controller) ensureStatefulSet(memcached *tapi.Memcached) error {
 			memcached.ObjectReference(),
 			core.EventTypeNormal,
 			eventer.EventReasonSuccessfulCreate,
-			"Successfully created StatefulSet",
+			"Successfully created Deployment",
 		)
 	}
 
@@ -359,7 +334,7 @@ func (c *Controller) update(oldMemcached, updatedMemcached *tapi.Memcached) erro
 	if err := c.ensureService(updatedMemcached); err != nil {
 		return err
 	}
-	if err := c.ensureStatefulSet(updatedMemcached); err != nil {
+	if err := c.ensureDeployment(updatedMemcached); err != nil {
 		return err
 	}
 

@@ -16,9 +16,9 @@ import (
 
 const (
 	// Duration in Minute
-	// Check whether pod under StatefulSet is running or not
+	// Check whether pod under Deployment is running or not
 	// Continue checking for this duration until failure
-	durationCheckStatefulSet = time.Minute * 30
+	durationCheckDeployment = time.Minute * 30
 )
 
 func (c *Controller) findService(memcached *tapi.Memcached) (bool, error) {
@@ -73,9 +73,9 @@ func (c *Controller) createService(memcached *tapi.Memcached) error {
 	return nil
 }
 
-func (c *Controller) findStatefulSet(memcached *tapi.Memcached) (bool, error) {
+func (c *Controller) findDeployment(memcached *tapi.Memcached) (bool, error) {
 	// SatatefulSet for Memcached database
-	statefulSet, err := c.Client.AppsV1beta1().StatefulSets(memcached.Namespace).Get(memcached.OffshootName(), metav1.GetOptions{})
+	deployment, err := c.Client.AppsV1beta1().Deployments(memcached.Namespace).Get(memcached.OffshootName(), metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return false, nil
@@ -84,25 +84,24 @@ func (c *Controller) findStatefulSet(memcached *tapi.Memcached) (bool, error) {
 		}
 	}
 
-	if statefulSet.Labels[tapi.LabelDatabaseKind] != tapi.ResourceKindMemcached {
-		return false, fmt.Errorf(`Intended statefulSet "%v" already exists`, memcached.OffshootName())
+	if deployment.Labels[tapi.LabelDatabaseKind] != tapi.ResourceKindMemcached {
+		return false, fmt.Errorf(`Intended deployment "%v" already exists`, memcached.OffshootName())
 	}
 
 	return true, nil
 }
 
-func (c *Controller) createStatefulSet(memcached *tapi.Memcached) (*apps.StatefulSet, error) {
+func (c *Controller) createDeployment(memcached *tapi.Memcached) (*apps.Deployment, error) {
 	// SatatefulSet for Memcached database
-	statefulSet := &apps.StatefulSet{
+	deployment := &apps.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        memcached.OffshootName(),
 			Namespace:   memcached.Namespace,
-			Labels:      memcached.StatefulSetLabels(),
-			Annotations: memcached.StatefulSetAnnotations(),
+			Labels:      memcached.DeploymentLabels(),
+			Annotations: memcached.DeploymentAnnotations(),
 		},
-		Spec: apps.StatefulSetSpec{
-			Replicas:    types.Int32P(1),
-			ServiceName: c.opt.GoverningService,
+		Spec: apps.DeploymentSpec{
+			Replicas: types.Int32P(1),
 			Template: core.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: memcached.OffshootLabels(),
@@ -151,7 +150,7 @@ func (c *Controller) createStatefulSet(memcached *tapi.Memcached) (*apps.Statefu
 				},
 			},
 		}
-		statefulSet.Spec.Template.Spec.Containers = append(statefulSet.Spec.Template.Spec.Containers, exporter)
+		deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, exporter)
 	}
 
 	if c.opt.EnableRbac {
@@ -160,14 +159,14 @@ func (c *Controller) createStatefulSet(memcached *tapi.Memcached) (*apps.Statefu
 			return nil, err
 		}
 
-		statefulSet.Spec.Template.Spec.ServiceAccountName = memcached.Name
+		deployment.Spec.Template.Spec.ServiceAccountName = memcached.Name
 	}
 
-	if _, err := c.Client.AppsV1beta1().StatefulSets(statefulSet.Namespace).Create(statefulSet); err != nil {
+	if _, err := c.Client.AppsV1beta1().Deployments(deployment.Namespace).Create(deployment); err != nil {
 		return nil, err
 	}
 
-	return statefulSet, nil
+	return deployment, nil
 }
 
 func (c *Controller) createDormantDatabase(memcached *tapi.Memcached) (*tapi.DormantDatabase, error) {

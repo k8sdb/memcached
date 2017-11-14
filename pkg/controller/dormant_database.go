@@ -25,7 +25,7 @@ func (c *Controller) PauseDatabase(dormantDb *tapi.DormantDatabase) error {
 		return err
 	}
 
-	if err := c.DeleteStatefulSet(dormantDb.OffshootName(), dormantDb.Namespace); err != nil {
+	if err := c.deleteDeployment(dormantDb.OffshootName(), dormantDb.Namespace); err != nil {
 		log.Errorln(err)
 		return err
 	}

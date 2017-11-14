@@ -3,21 +3,11 @@ package e2e_test
 import (
 	"fmt"
 
-	"github.com/appscode/go/types"
 	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/k8sdb/memcached/test/e2e/framework"
 	"github.com/k8sdb/memcached/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-)
-
-const (
-	S3_BUCKET_NAME       = "S3_BUCKET_NAME"
-	GCS_BUCKET_NAME      = "GCS_BUCKET_NAME"
-	AZURE_CONTAINER_NAME = "AZURE_CONTAINER_NAME"
-	SWIFT_CONTAINER_NAME = "SWIFT_CONTAINER_NAME"
 )
 
 var _ = Describe("Memcached", func() {
@@ -69,7 +59,6 @@ var _ = Describe("Memcached", func() {
 		if skipMessage != "" {
 			Skip(skipMessage)
 		}
-
 		// Create Memcached
 		createAndWaitForRunning()
 
@@ -82,23 +71,6 @@ var _ = Describe("Memcached", func() {
 		Context("General", func() {
 
 			Context("-", func() {
-				It("should run successfully", shouldSuccessfullyRunning)
-			})
-
-			Context("with Storage", func() {
-				BeforeEach(func() {
-					if f.StorageClass == "" {
-						skipMessage = "Missing StorageClassName. Provide as flag to test this."
-					}
-					memcached.Spec.Storage = &core.PersistentVolumeClaimSpec{
-						Resources: core.ResourceRequirements{
-							Requests: core.ResourceList{
-								core.ResourceStorage: resource.MustParse("5Gi"),
-							},
-						},
-						StorageClassName: types.StringP(f.StorageClass),
-					}
-				})
 				It("should run successfully", shouldSuccessfullyRunning)
 			})
 		})
@@ -133,28 +105,6 @@ var _ = Describe("Memcached", func() {
 			})
 		})
 
-		Context("Initialize", func() {
-			Context("With Script", func() {
-				BeforeEach(func() {
-					memcached.Spec.Init = &tapi.InitSpec{
-						ScriptSource: &tapi.ScriptSourceSpec{
-							VolumeSource: core.VolumeSource{
-								GitRepo: &core.GitRepoVolumeSource{
-									Repository: "https://github.com/the-redback/k8s-memcached-init-script.git",
-									Directory:  ".",
-								},
-							},
-						},
-					}
-				})
-
-				By("Using a false init script.")
-
-				It("should run successfully", shouldSuccessfullyRunning)
-
-			})
-		})
-
 		Context("Resume", func() {
 			var usedInitSpec bool
 			BeforeEach(func() {
@@ -186,35 +136,11 @@ var _ = Describe("Memcached", func() {
 				memcached, err = f.GetMemcached(memcached.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 
-				if usedInitSpec {
-					Expect(memcached.Spec.Init).Should(BeNil())
-					Expect(memcached.Annotations[tapi.MemcachedInitSpec]).ShouldNot(BeEmpty())
-				}
-
 				// Delete test resource
 				deleteTestResource()
 			}
 
 			Context("-", func() {
-				It("should resume DormantDatabase successfully", shouldResumeSuccessfully)
-			})
-
-			Context("With Init", func() {
-				BeforeEach(func() {
-					usedInitSpec = true
-					memcached.Spec.Init = &tapi.InitSpec{
-						ScriptSource: &tapi.ScriptSourceSpec{
-							VolumeSource: core.VolumeSource{
-								GitRepo: &core.GitRepoVolumeSource{
-									Repository: "https://github.com/the-redback/k8s-memcached-init-script.git",
-									Directory:  ".",
-								},
-							},
-						},
-					}
-				})
-				By("Using a false initgitk script.")
-
 				It("should resume DormantDatabase successfully", shouldResumeSuccessfully)
 			})
 
@@ -242,42 +168,11 @@ var _ = Describe("Memcached", func() {
 					_, err = f.GetMemcached(memcached.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
-					if usedInitSpec {
-						Expect(memcached.Spec.Init).Should(BeNil())
-						Expect(memcached.Annotations[tapi.MemcachedInitSpec]).ShouldNot(BeEmpty())
-					}
-
 					// Delete test resource
 					deleteTestResource()
 				})
 
-				Context("with init and pvc", func() {
-					BeforeEach(func() {
-						usedInitSpec = true
-						memcached.Spec.Init = &tapi.InitSpec{
-							ScriptSource: &tapi.ScriptSourceSpec{
-								VolumeSource: core.VolumeSource{
-									GitRepo: &core.GitRepoVolumeSource{
-										Repository: "https://github.com/the-redback/k8s-memcached-init-script.git",
-										Directory:  ".",
-									},
-								},
-							},
-						}
-						if f.StorageClass == "" {
-							skipMessage = "Missing StorageClassName. Provide as flag to test this."
-						}
-						memcached.Spec.Storage = &core.PersistentVolumeClaimSpec{
-							Resources: core.ResourceRequirements{
-								Requests: core.ResourceList{
-									core.ResourceStorage: resource.MustParse("50Mi"),
-								},
-							},
-							StorageClassName: types.StringP(f.StorageClass),
-						}
-					})
-
-					By("Using a false init script and pvc.")
+				Context("Multiple times", func() {
 
 					It("should resume DormantDatabase successfully", func() {
 						// Create and wait for running Memcached

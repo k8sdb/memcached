@@ -37,13 +37,6 @@ func (c *Controller) createRole(memcached *tapi.Memcached) error {
 					ResourceNames: []string{memcached.Name},
 					Verbs:         []string{"get"},
 				},
-				{
-					// TODO. Use this if secret is necessary, Otherwise remove it
-					APIGroups:     []string{core.GroupName},
-					Resources:     []string{"secrets"},
-					ResourceNames: []string{memcached.Spec.DatabaseSecret.SecretName},
-					Verbs:         []string{"get"},
-				},
 			}
 			return in
 		},

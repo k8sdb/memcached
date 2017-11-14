@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -194,15 +193,6 @@ func (c *Controller) createDormantDatabase(memcached *tapi.Memcached) (*tapi.Dor
 			},
 		},
 	}
-
-	initSpec, _ := json.Marshal(memcached.Spec.Init)
-	if memcached.Spec.Init != nil {
-		dormantDb.Annotations = map[string]string{
-			tapi.MemcachedInitSpec: string(initSpec),
-		}
-	}
-
-	dormantDb.Spec.Origin.Spec.Memcached.Init = nil
 
 	return c.ExtClient.DormantDatabases(dormantDb.Namespace).Create(dormantDb)
 }

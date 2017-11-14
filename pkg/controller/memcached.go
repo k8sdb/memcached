@@ -169,18 +169,11 @@ func (c *Controller) matchDormantDatabase(memcached *tapi.Memcached) (bool, erro
 		if err := json.Unmarshal([]byte(initSpecAnnotationStr), &initSpecAnnotation); err != nil {
 			return sendEvent(err.Error())
 		}
-
-		if memcached.Spec.Init != nil {
-			if !reflect.DeepEqual(initSpecAnnotation, memcached.Spec.Init) {
-				return sendEvent("InitSpec mismatches with DormantDatabase annotation")
-			}
-		}
 	}
 
 	// Check Origin Spec
 	drmnOriginSpec := dormantDb.Spec.Origin.Spec.Memcached
 	originalSpec := memcached.Spec
-	originalSpec.Init = nil
 
 	if !reflect.DeepEqual(drmnOriginSpec, &originalSpec) {
 		return sendEvent("Memcached spec mismatches with OriginSpec in DormantDatabases")
@@ -258,10 +251,6 @@ func (c *Controller) ensureStatefulSet(memcached *tapi.Memcached) error {
 			eventer.EventReasonSuccessfulCreate,
 			"Successfully created StatefulSet",
 		)
-	}
-
-	if memcached.Spec.Init != nil && memcached.Spec.Init.SnapshotSource != nil {
-		log.Errorln("No Initialization is available for Memcached.")
 	}
 
 	_, err = kutildb.TryPatchMemcached(c.ExtClient, memcached.ObjectMeta, func(in *tapi.Memcached) *tapi.Memcached {

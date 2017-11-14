@@ -20,13 +20,6 @@ func ValidateMemcached(client kubernetes.Interface, memcached *tapi.Memcached) e
 		return fmt.Errorf(`Image %v:%v not found`, docker.ImageMemcached, version)
 	}
 
-	if memcached.Spec.Storage != nil {
-		var err error
-		if err = amv.ValidateStorage(client, memcached.Spec.Storage); err != nil {
-			return err
-		}
-	}
-
 	monitorSpec := memcached.Spec.Monitor
 	if monitorSpec != nil {
 		if err := amv.ValidateMonitorSpec(monitorSpec); err != nil {

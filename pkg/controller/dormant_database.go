@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"errors"
-
 	"github.com/appscode/go/log"
 	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -54,10 +52,6 @@ func (c *Controller) WipeOutDatabase(dormantDb *tapi.DormantDatabase) error {
 func (c *Controller) ResumeDatabase(dormantDb *tapi.DormantDatabase) error {
 	origin := dormantDb.Spec.Origin
 	objectMeta := origin.ObjectMeta
-
-	if origin.Spec.Memcached.Init != nil {
-		return errors.New("do not support InitSpec in spec.origin.memcached")
-	}
 
 	memcached := &tapi.Memcached{
 		ObjectMeta: metav1.ObjectMeta{

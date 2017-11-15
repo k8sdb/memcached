@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="1" failures="1" time="301.053118013">
-      <testcase name="Memcached Test General - should run successfully" classname="e2e Suite" time="300.005420089">
-          <failure type="Failure">/home/maruf/go/src/github.com/k8sdb/memcached/test/e2e/memcached_test.go:77&#xA;Timed out after 300.000s.&#xA;Expected&#xA;    &lt;bool&gt;: false&#xA;to be true&#xA;/home/maruf/go/src/github.com/k8sdb/memcached/test/e2e/memcached_test.go:34</failure>
-          <system-out>[BeforeEach] Memcached&#xA;  /home/maruf/go/src/github.com/k8sdb/memcached/test/e2e/memcached_test.go:22&#xA;[It] should run successfully&#xA;  /home/maruf/go/src/github.com/k8sdb/memcached/test/e2e/memcached_test.go:77&#xA;�[1mSTEP�[0m: Create Memcached: memcached-2vdgfi&#xA;�[1mSTEP�[0m: Wait for Running memcached&#xA;</system-out>
-      </testcase>
+  <testsuite tests="1" failures="0" time="40.178719907">
+      <testcase name="Memcached Test General - should run successfully" classname="e2e Suite" time="40.085494177"></testcase>
       <testcase name="Memcached Test DoNotPause should work successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>

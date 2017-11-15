@@ -28,7 +28,7 @@ func init() {
 }
 
 const (
-	TIMEOUT = 20 * time.Minute
+	TIMEOUT = 30 * time.Minute
 )
 
 var (

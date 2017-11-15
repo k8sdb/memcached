@@ -14,7 +14,6 @@ import (
 	_ "github.com/graymeta/stow/google"
 	_ "github.com/graymeta/stow/s3"
 	apps "k8s.io/api/apps/v1beta1"
-	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -69,7 +68,6 @@ func (c *Controller) deleteDeployment(name, namespace string) error {
 	if !checkSuccess {
 		return errors.New("Fail to delete Deployments Pods")
 	}
-
 	// Delete Deployments
 	return c.Client.AppsV1beta1().Deployments(deployment.Namespace).Delete(deployment.Name, nil)
 }
@@ -118,20 +116,16 @@ func patchDeployments(c kubernetes.Interface, cur *apps.Deployment, transform fu
 }
 
 func (c *Controller) checkDeploymentPodStatus(deployment *apps.Deployment, checkDuration time.Duration) error {
-	podName := fmt.Sprintf("%v-%v", deployment.Name, 0)
-
 	podReady := false
 	then := time.Now()
 	now := time.Now()
 	for now.Sub(then) < checkDuration {
-		pod, err := c.Client.CoreV1().Pods(deployment.Namespace).Get(podName, metav1.GetOptions{})
+		dep, err := c.Client.AppsV1beta1().Deployments(deployment.Namespace).Get(deployment.Name, metav1.GetOptions{})
 		if err != nil {
 			if kerr.IsNotFound(err) {
-				_, err := c.Client.AppsV1beta1().Deployments(deployment.Namespace).Get(deployment.Name, metav1.GetOptions{})
-				if kerr.IsNotFound(err) {
+				if dep.Status.Replicas != 0 && dep.Status.Replicas == dep.Status.ReadyReplicas {
 					break
 				}
-
 				time.Sleep(sleepDuration)
 				now = time.Now()
 				continue
@@ -139,10 +133,10 @@ func (c *Controller) checkDeploymentPodStatus(deployment *apps.Deployment, check
 				return err
 			}
 		}
-		log.Debugf("Pod Phase: %v", pod.Status.Phase)
+		log.Debugf("Available replicas: %v", dep.Status.ReadyReplicas)
 
 		// If job is success
-		if pod.Status.Phase == core.PodRunning {
+		if dep.Status.Replicas != 0 && dep.Status.Replicas == dep.Status.ReadyReplicas {
 			podReady = true
 			break
 		}

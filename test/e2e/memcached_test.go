@@ -3,7 +3,6 @@ package e2e_test
 import (
 	"fmt"
 
-	"github.com/appscode/go/hold"
 	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/k8sdb/memcached/test/e2e/framework"
 	"github.com/k8sdb/memcached/test/e2e/matcher"
@@ -62,8 +61,6 @@ var _ = Describe("Memcached", func() {
 		}
 		// Create Memcached
 		createAndWaitForRunning()
-
-		hold.Hold()
 
 		// Delete test resource
 		deleteTestResource()

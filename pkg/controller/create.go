@@ -93,6 +93,9 @@ func (c *Controller) findDeployment(memcached *tapi.Memcached) (bool, error) {
 
 func (c *Controller) createDeployment(memcached *tapi.Memcached) (*apps.Deployment, error) {
 	// SatatefulSet for Memcached database
+	if memcached.Spec.Replicas == 0 {
+		memcached.Spec.Replicas = 1
+	}
 	deployment := &apps.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        memcached.OffshootName(),
@@ -101,7 +104,7 @@ func (c *Controller) createDeployment(memcached *tapi.Memcached) (*apps.Deployme
 			Annotations: memcached.DeploymentAnnotations(),
 		},
 		Spec: apps.DeploymentSpec{
-			Replicas: types.Int32P(1),
+			Replicas: types.Int32P(memcached.Spec.Replicas),
 			Template: core.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: memcached.OffshootLabels(),

@@ -71,8 +71,15 @@ var _ = Describe("Memcached", func() {
 		Context("General", func() {
 
 			Context("-", func() {
-				FIt("should run successfully", shouldSuccessfullyRunning)
+				It("should run successfully", shouldSuccessfullyRunning)
 			})
+			Context("Multiple Replica", func() {
+				BeforeEach(func() {
+					memcached.Spec.Replicas = 3
+				})
+				It("should run successfully", shouldSuccessfullyRunning)
+			})
+
 		})
 
 		Context("DoNotPause", func() {

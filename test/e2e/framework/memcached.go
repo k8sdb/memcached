@@ -22,7 +22,7 @@ func (f *Invocation) Memcached() *tapi.Memcached {
 			},
 		},
 		Spec: tapi.MemcachedSpec{
-			Version: types.StrYo("1"),
+			Version: types.StrYo("1.5.3-alpine"),
 		},
 	}
 }

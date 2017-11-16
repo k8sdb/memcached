@@ -3,11 +3,12 @@ package controller
 import (
 	"fmt"
 
-	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/k8sdb/apimachinery/pkg/monitor"
+	"github.com/appscode/kutil/tools/monitoring/agents"
+	mona "github.com/appscode/kutil/tools/monitoring/api"
+	api "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
 )
 
-func (c *Controller) newMonitorController(memcached *tapi.Memcached) (monitor.Monitor, error) {
+func (c *Controller) newMonitorController(memcached *api.Memcached) (mona.Agent, error) {
 	monitorSpec := memcached.Spec.Monitor
 
 	if monitorSpec == nil {
@@ -15,38 +16,38 @@ func (c *Controller) newMonitorController(memcached *tapi.Memcached) (monitor.Mo
 	}
 
 	if monitorSpec.Prometheus != nil {
-		return monitor.NewPrometheusController(c.Client, c.ApiExtKubeClient, c.promClient, c.opt.OperatorNamespace), nil
+		return agents.New(monitorSpec.Agent, c.Client, c.ApiExtKubeClient, c.promClient), nil
 	}
 
-	return nil, fmt.Errorf("Monitoring controller not found for %v", monitorSpec)
+	return nil, fmt.Errorf("monitoring controller not found for %v", monitorSpec)
 }
 
-func (c *Controller) addMonitor(memcached *tapi.Memcached) error {
-	ctrl, err := c.newMonitorController(memcached)
+func (c *Controller) addMonitor(memcached *api.Memcached) error {
+	agent, err := c.newMonitorController(memcached)
 	if err != nil {
 		return err
 	}
-	return ctrl.AddMonitor(memcached.ObjectMeta, memcached.Spec.Monitor)
+	return agent.Add(memcached.StatsAccessor(), memcached.Spec.Monitor)
 }
 
-func (c *Controller) deleteMonitor(memcached *tapi.Memcached) error {
-	ctrl, err := c.newMonitorController(memcached)
+func (c *Controller) deleteMonitor(memcached *api.Memcached) error {
+	agent, err := c.newMonitorController(memcached)
 	if err != nil {
 		return err
 	}
-	return ctrl.DeleteMonitor(memcached.ObjectMeta, memcached.Spec.Monitor)
+	return agent.Delete(memcached.StatsAccessor(), memcached.Spec.Monitor)
 }
 
-func (c *Controller) updateMonitor(oldMemcached, updatedMemcached *tapi.Memcached) error {
+func (c *Controller) updateMonitor(oldMemcached, updatedMemcached *api.Memcached) error {
 	var err error
-	var ctrl monitor.Monitor
+	var agent mona.Agent
 	if updatedMemcached.Spec.Monitor == nil {
-		ctrl, err = c.newMonitorController(oldMemcached)
+		agent, err = c.newMonitorController(oldMemcached)
 	} else {
-		ctrl, err = c.newMonitorController(updatedMemcached)
+		agent, err = c.newMonitorController(updatedMemcached)
 	}
 	if err != nil {
 		return err
 	}
-	return ctrl.UpdateMonitor(updatedMemcached.ObjectMeta, oldMemcached.Spec.Monitor, updatedMemcached.Spec.Monitor)
+	return agent.Update(updatedMemcached.StatsAccessor(), oldMemcached.Spec.Monitor, updatedMemcached.Spec.Monitor)
 }

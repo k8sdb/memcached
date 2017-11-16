@@ -1,5 +1,5 @@
-hash: c64e0573975bb21059932371d9f84766741a1acaa162e0a12797cbac2ba349e3
-updated: 2017-11-14T17:59:08.376651011+06:00
+hash: d20cb4aa85cafd1ac3ec8431f7308d06164555704445f63ee5af8d730a5cc38d
+updated: 2017-11-16T12:08:40.147636479+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -20,11 +20,16 @@ imports:
   - version
   - wait
 - name: github.com/appscode/kutil
-  version: 4b4f67973f42bf9a5355c6b4c2d00040833d4143
+  version: c7547d78847930f4b48c4e3b3d6fe1d8b0309bd7
   subpackages:
   - apps/v1beta1
   - core/v1
+  - meta
   - rbac/v1beta1
+  - tools/monitoring/agents
+  - tools/monitoring/agents/coreosprometheusoperator
+  - tools/monitoring/agents/prometheusbuiltin
+  - tools/monitoring/api
 - name: github.com/appscode/log
   version: 68e0e42e42c01371f3950571fc87c2298a51dd8f
   subpackages:
@@ -205,7 +210,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/k8sdb/apimachinery
-  version: 16b5a65cf90337311f87afcfa5c9c02ec5ddbb02
+  version: 17be81f3e360e9717e92c5683335b76d299a0e24
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -215,9 +220,12 @@ imports:
   - pkg/controller
   - pkg/docker
   - pkg/eventer
-  - pkg/monitor
   - pkg/storage
   - pkg/validator
+- name: github.com/kubernetes/apimachinery
+  version: 18a564baac720819100827c16fdebcadb05b2d0d
+  subpackages:
+  - pkg/conversion
 - name: github.com/mailru/easyjson
   version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
@@ -257,7 +265,7 @@ imports:
 - name: github.com/peterbourgon/diskv
   version: 5f041e8faa004a95c88a202771f4cc3e991971e6
 - name: github.com/pkg/errors
-  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+  version: a22138067af1c4942683050411a841ade67fe1eb
 - name: github.com/prometheus/client_golang
   version: c5b7fccd204277076155f10851dad72b76a49317
   subpackages:

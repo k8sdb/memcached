@@ -74,7 +74,7 @@ func (c *Controller) createService(memcached *tapi.Memcached) error {
 }
 
 func (c *Controller) findDeployment(memcached *tapi.Memcached) (bool, error) {
-	// SatatefulSet for Memcached database
+	// Deployment for Memcached database
 	deployment, err := c.Client.AppsV1beta1().Deployments(memcached.Namespace).Get(memcached.OffshootName(), metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
@@ -92,7 +92,7 @@ func (c *Controller) findDeployment(memcached *tapi.Memcached) (bool, error) {
 }
 
 func (c *Controller) createDeployment(memcached *tapi.Memcached) (*apps.Deployment, error) {
-	// SatatefulSet for Memcached database
+	// Deployment for Memcached database
 	if memcached.Spec.Replicas == 0 {
 		memcached.Spec.Replicas = 1
 	}

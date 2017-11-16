@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/appscode/log"
 	tapi "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
@@ -238,10 +237,6 @@ func (c *Controller) ensureDeployment(memcached *tapi.Memcached) error {
 	}
 	return nil
 }
-
-const (
-	durationCheckRestoreJob = time.Minute * 30
-)
 
 func (c *Controller) pause(memcached *tapi.Memcached) error {
 	if memcached.Annotations != nil {

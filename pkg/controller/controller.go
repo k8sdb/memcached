@@ -73,10 +73,9 @@ func New(
 		ApiExtKubeClient: apiExtKubeClient,
 		promClient:       promClient,
 		cronController:   cronController,
-		// TODO
-		recorder:   eventer.NewEventRecorder(client, "Memcached operator"),
-		opt:        opt,
-		syncPeriod: time.Minute * 2,
+		recorder:         eventer.NewEventRecorder(client, "Memcached operator"),
+		opt:              opt,
+		syncPeriod:       time.Minute * 2,
 	}
 }
 
@@ -84,9 +83,6 @@ func New(
 func (c *Controller) Run() {
 	// Ensure TPR
 	c.ensureCustomResourceDefinition()
-
-	// Start Cron
-	c.cronController.StartCron() //#Later
 
 	// Watch x  TPR objects
 	go c.watchMemcached()

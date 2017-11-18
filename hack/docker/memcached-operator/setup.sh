@@ -8,51 +8,51 @@ GOPATH=$(go env GOPATH)
 SRC=$GOPATH/src
 BIN=$GOPATH/bin
 ROOT=$GOPATH
-REPO_ROOT=$GOPATH/src/github.com/k8sdb/memcached 
+REPO_ROOT=$GOPATH/src/github.com/k8sdb/memcached
 
 source "$REPO_ROOT/hack/libbuild/common/lib.sh"
 source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
-IMG=k8s-x
+IMG=memcached-operator
 
-DIST=$GOPATH/src/github.com/k8sdb/memcached /dist
+DIST=$GOPATH/src/github.com/k8sdb/memcached/dist
 mkdir -p $DIST
 if [ -f "$DIST/.tag" ]; then
 	export $(cat $DIST/.tag | xargs)
 fi
 
 clean() {
-    pushd $REPO_ROOT/hack/docker/k8s-x
-    rm -f k8s-x Dockerfile
+    pushd $REPO_ROOT/hack/docker/memcached-operator
+    rm -f memcached-operator Dockerfile
     popd
 }
 
 build_binary() {
     pushd $REPO_ROOT
     ./hack/builddeps.sh
-    ./hack/make.py build k8s-x
+    ./hack/make.py build memcached-operator
     detect_tag $DIST/.tag
     popd
 }
 
 build_docker() {
-    pushd $REPO_ROOT/hack/docker/k8s-x
-    cp $DIST/k8s-x/k8s-x-linux-amd64 k8s-x
-    chmod 755 k8s-x
+    pushd $REPO_ROOT/hack/docker/memcached-operator
+    cp $DIST/memcached-operator/memcached-operator-linux-amd64 memcached-operator
+    chmod 755 memcached-operator
 
     cat >Dockerfile <<EOL
 FROM alpine
 
-COPY k8s-x /k8s-x
+COPY memcached-operator /memcached-operator
 
 USER nobody:nobody
-ENTRYPOINT ["/k8s-x"]
+ENTRYPOINT ["/memcached-operator"]
 EOL
     local cmd="docker build -t appscode/$IMG:$TAG ."
     echo $cmd; $cmd
 
-    rm k8s-x Dockerfile
+    rm memcached-operator Dockerfile
     popd
 }
 

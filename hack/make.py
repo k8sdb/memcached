@@ -38,7 +38,7 @@ from os.path import expandvars, join, dirname
 libbuild.REPO_ROOT = expandvars('$GOPATH') + '/src/github.com/k8sdb/memcached'
 BUILD_METADATA = libbuild.metadata(libbuild.REPO_ROOT)
 libbuild.BIN_MATRIX = {
-    'k8s-x': {
+    'memcached-operator': {
         'type': 'go',
         'go_version': True,
         'use_cgo': False,
@@ -99,9 +99,9 @@ def build_cmd(name):
         if 'distro' in cfg:
             for goos, archs in cfg['distro'].items():
                 for goarch in archs:
-                    libbuild.go_build(name, goos, goarch, main='cmd/{}/*.go'.format(name))
+                    libbuild.go_build(name, goos, goarch, main='*.go')
         else:
-            libbuild.go_build(name, libbuild.GOHOSTOS, libbuild.GOHOSTARCH, main='cmd/{}/*.go'.format(name))
+            libbuild.go_build(name, libbuild.GOHOSTOS, libbuild.GOHOSTARCH, main='*.go')
 
 
 def build_cmds():

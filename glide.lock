@@ -1,5 +1,5 @@
 hash: 02c4a00b22e155c6bcd6a81996b3aaaed21fa7c5e813cfbe12bcfd438a428f72
-updated: 2017-11-18T13:33:15.487260011-08:00
+updated: 2017-11-18T18:55:12.58335403-08:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -211,7 +211,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/k8sdb/apimachinery
-  version: dd8a840c5e36e1dcc74933f9bc5e6ae8c839b5bc
+  version: 8e2e732e416be65ca67c71fbb6e3ac1cc8bfd8df
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1

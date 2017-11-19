@@ -20,7 +20,7 @@ func NewRootCmd(version string) *cobra.Command {
 		enableAnalytics = true
 	)
 	var rootCmd = &cobra.Command{
-		Use:               "memcached-operator",
+		Use:               "mc-operator",
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			c.Flags().VisitAll(func(flag *pflag.Flag) {

@@ -13,8 +13,8 @@ import (
 	amc "github.com/k8sdb/apimachinery/pkg/controller"
 	"github.com/k8sdb/apimachinery/pkg/eventer"
 	core "k8s.io/api/core/v1"
-	extensionsobj "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+	apiext_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiext_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -42,7 +42,7 @@ type Options struct {
 type Controller struct {
 	*amc.Controller
 	// Api Extension Client
-	ApiExtKubeClient apiextensionsclient.ApiextensionsV1beta1Interface
+	ApiExtKubeClient apiext_cs.ApiextensionsV1beta1Interface
 	// Prometheus client
 	promClient pcm.MonitoringV1Interface
 	// Cron Controller
@@ -59,7 +59,7 @@ var _ amc.Deleter = &Controller{}
 
 func New(
 	client kubernetes.Interface,
-	apiExtKubeClient apiextensionsclient.ApiextensionsV1beta1Interface,
+	apiExtKubeClient apiext_cs.ApiextensionsV1beta1Interface,
 	extClient tcs.KubedbV1alpha1Interface,
 	promClient pcm.MonitoringV1Interface,
 	cronController amc.CronControllerInterface,
@@ -189,18 +189,18 @@ func (c *Controller) ensureCustomResourceDefinition() {
 		return
 	}
 
-	crd := &extensionsobj.CustomResourceDefinition{
+	crd := &apiext_api.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceName,
 			Labels: map[string]string{
 				"app": "kubedb",
 			},
 		},
-		Spec: extensionsobj.CustomResourceDefinitionSpec{
+		Spec: apiext_api.CustomResourceDefinitionSpec{
 			Group:   tapi.SchemeGroupVersion.Group,
 			Version: tapi.SchemeGroupVersion.Version,
-			Scope:   extensionsobj.NamespaceScoped,
-			Names: extensionsobj.CustomResourceDefinitionNames{
+			Scope:   apiext_api.NamespaceScoped,
+			Names: apiext_api.CustomResourceDefinitionNames{
 				Plural:     tapi.ResourceTypeMemcached,
 				Kind:       tapi.ResourceKindMemcached,
 				ShortNames: []string{tapi.ResourceCodeMemcached},

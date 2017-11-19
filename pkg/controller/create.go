@@ -85,7 +85,7 @@ func (c *Controller) findDeployment(memcached *tapi.Memcached) (bool, error) {
 	}
 
 	if deployment.Labels[tapi.LabelDatabaseKind] != tapi.ResourceKindMemcached {
-		return false, fmt.Errorf(`Intended deployment "%v" already exists`, memcached.OffshootName())
+		return false, fmt.Errorf(`intended deployment "%v" already exists`, memcached.OffshootName())
 	}
 
 	return true, nil
@@ -157,7 +157,7 @@ func (c *Controller) createDeployment(memcached *tapi.Memcached) (*apps.Deployme
 	}
 
 	if c.opt.EnableRbac {
-		// Ensure ClusterRoles for database statefulsets
+		// Ensure ClusterRoles for database deployment
 		if err := c.createRBACStuff(memcached); err != nil {
 			return nil, err
 		}

@@ -14,7 +14,7 @@ source "$REPO_ROOT/hack/libbuild/common/lib.sh"
 source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
-IMG=memcached-operator
+IMG=mc-operator
 
 DIST=$GOPATH/src/github.com/k8sdb/memcached/dist
 mkdir -p $DIST
@@ -23,36 +23,36 @@ if [ -f "$DIST/.tag" ]; then
 fi
 
 clean() {
-    pushd $REPO_ROOT/hack/docker/memcached-operator
-    rm -f memcached-operator Dockerfile
+    pushd $REPO_ROOT/hack/docker/mc-operator
+    rm -f mc-operator Dockerfile
     popd
 }
 
 build_binary() {
     pushd $REPO_ROOT
     ./hack/builddeps.sh
-    ./hack/make.py build memcached-operator
+    ./hack/make.py build mc-operator
     detect_tag $DIST/.tag
     popd
 }
 
 build_docker() {
-    pushd $REPO_ROOT/hack/docker/memcached-operator
-    cp $DIST/memcached-operator/memcached-operator-linux-amd64 memcached-operator
-    chmod 755 memcached-operator
+    pushd $REPO_ROOT/hack/docker/mc-operator
+    cp $DIST/mc-operator/mc-operator-linux-amd64 mc-operator
+    chmod 755 mc-operator
 
     cat >Dockerfile <<EOL
 FROM alpine
 
-COPY memcached-operator /memcached-operator
+COPY mc-operator /mc-operator
 
 USER nobody:nobody
-ENTRYPOINT ["/memcached-operator"]
+ENTRYPOINT ["/mc-operator"]
 EOL
     local cmd="docker build -t appscode/$IMG:$TAG ."
     echo $cmd; $cmd
 
-    rm memcached-operator Dockerfile
+    rm mc-operator Dockerfile
     popd
 }
 

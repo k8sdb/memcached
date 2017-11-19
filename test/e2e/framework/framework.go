@@ -18,7 +18,7 @@ func New(kubeClient kubernetes.Interface, extClient tcs.KubedbV1alpha1Interface,
 	return &Framework{
 		kubeClient:   kubeClient,
 		extClient:    extClient,
-		name:         "memcached-operator",
+		name:         "mc-operator",
 		namespace:    rand.WithUniqSuffix("memcached"),
 		StorageClass: storageClass,
 	}

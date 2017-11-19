@@ -1,20 +1,26 @@
-## memcached-operator version
+## mc-operator run
 
-Prints binary version number.
+Run Memcached in Kubernetes
 
 ### Synopsis
 
 
-Prints binary version number.
+Run Memcached in Kubernetes
 
 ```
-memcached-operator version [flags]
+mc-operator run [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for version
+      --address string             Address to listen on for web interface and telemetry. (default ":8080")
+      --exporter-tag string        Tag of kubedb/operator used as exporter (default "0.6.0")
+      --governing-service string   Governing service for database statefulset (default "kubedb")
+  -h, --help                       help for run
+      --kubeconfig string          Path to kubeconfig file with authorization information (the master location is set by the master flag).
+      --master string              The address of the Kubernetes API server (overrides any value in kubeconfig)
+      --rbac                       Enable RBAC for database workloads
 ```
 
 ### Options inherited from parent commands
@@ -33,5 +39,5 @@ memcached-operator version [flags]
 ```
 
 ### SEE ALSO
-* [memcached-operator](memcached-operator.md)	 - 
+* [mc-operator](mc-operator.md)	 - 
 

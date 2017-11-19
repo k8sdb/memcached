@@ -10,8 +10,7 @@ BIN=$GOPATH/bin
 ROOT=$GOPATH
 REPO_ROOT=$GOPATH/src/github.com/k8sdb/memcached
 
-source "$REPO_ROOT/hack/libbuild/common/lib.sh"
-source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
+source "$REPO_ROOT/hack/libbuild/common/kubedb_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
 IMG=mc-operator
@@ -19,7 +18,7 @@ IMG=mc-operator
 DIST=$GOPATH/src/github.com/k8sdb/memcached/dist
 mkdir -p $DIST
 if [ -f "$DIST/.tag" ]; then
-	export $(cat $DIST/.tag | xargs)
+    export $(cat $DIST/.tag | xargs)
 fi
 
 clean() {
@@ -38,18 +37,23 @@ build_binary() {
 
 build_docker() {
     pushd $REPO_ROOT/hack/docker/mc-operator
-    cp $DIST/mc-operator/mc-operator-linux-amd64 mc-operator
+    cp $DIST/mc-operator/mc-operator-alpine-amd64 mc-operator
     chmod 755 mc-operator
 
     cat >Dockerfile <<EOL
 FROM alpine
+
+RUN set -x \
+  && apk update \
+  && apk add ca-certificates \
+  && rm -rf /var/cache/apk/*
 
 COPY mc-operator /mc-operator
 
 USER nobody:nobody
 ENTRYPOINT ["/mc-operator"]
 EOL
-    local cmd="docker build -t appscode/$IMG:$TAG ."
+    local cmd="docker build -t kubedb/$IMG:$TAG ."
     echo $cmd; $cmd
 
     rm mc-operator Dockerfile
@@ -64,12 +68,13 @@ build() {
 docker_push() {
     if [ "$APPSCODE_ENV" = "prod" ]; then
         echo "Nothing to do in prod env. Are you trying to 'release' binaries to prod?"
-        exit 0
+        exit 1
     fi
-
-    if [[ "$(docker images -q appscode/$IMG:$TAG 2> /dev/null)" != "" ]]; then
-        docker_up $IMG:$TAG
+    if [ "$TAG_STRATEGY" = "git_tag" ]; then
+        echo "Are you trying to 'release' binaries to prod?"
+        exit 1
     fi
+    hub_canary
 }
 
 docker_release() {
@@ -81,10 +86,7 @@ docker_release() {
         echo "'apply_tag' to release binaries and/or docker images."
         exit 1
     fi
-
-    if [[ "$(docker images -q appscode/$IMG:$TAG 2> /dev/null)" != "" ]]; then
-        docker push appscode/$IMG:$TAG
-    fi
+    hub_up
 }
 
 source_repo $@

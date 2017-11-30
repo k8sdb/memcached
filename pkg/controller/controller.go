@@ -118,6 +118,7 @@ func (c *Controller) watchMemcached() {
 			AddFunc: func(obj interface{}) {
 				memcached := obj.(*api.Memcached)
 				util.AssignTypeKind(memcached)
+				setMonitoringPort(memcached)
 				if memcached.Status.CreationTime == nil {
 					if err := c.create(memcached); err != nil {
 						log.Errorln(err)
@@ -128,6 +129,7 @@ func (c *Controller) watchMemcached() {
 			DeleteFunc: func(obj interface{}) {
 				memcached := obj.(*api.Memcached)
 				util.AssignTypeKind(memcached)
+				setMonitoringPort(memcached)
 				if err := c.pause(memcached); err != nil {
 					log.Errorln(err)
 				}
@@ -143,6 +145,8 @@ func (c *Controller) watchMemcached() {
 				}
 				util.AssignTypeKind(oldObj)
 				util.AssignTypeKind(newObj)
+				setMonitoringPort(oldObj)
+				setMonitoringPort(newObj)
 				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
 					if err := c.update(oldObj, newObj); err != nil {
 						log.Errorln(err)
@@ -152,6 +156,15 @@ func (c *Controller) watchMemcached() {
 		},
 	)
 	cacheController.Run(wait.NeverStop)
+}
+
+func setMonitoringPort(memcached *api.Memcached) {
+	if memcached.Spec.Monitor != nil &&
+		memcached.Spec.Monitor.Prometheus != nil {
+		if memcached.Spec.Monitor.Prometheus.Port == 0 {
+			memcached.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
+		}
+	}
 }
 
 func (c *Controller) watchDeletedDatabase() {

@@ -61,7 +61,7 @@ func (c *Controller) createService(memcached *api.Memcached) error {
 		memcached.Spec.Monitor.Prometheus != nil {
 		svc.Spec.Ports = append(svc.Spec.Ports, core.ServicePort{
 			Name:       api.PrometheusExporterPortName,
-			Port:       api.PrometheusExporterPortNumber,
+			Port:       memcached.Spec.Monitor.Prometheus.Port,
 			TargetPort: intstr.FromString(api.PrometheusExporterPortName),
 		})
 	}
@@ -140,7 +140,7 @@ func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deploymen
 			Name: "exporter",
 			Args: []string{
 				"export",
-				fmt.Sprintf("--address=:%d", api.PrometheusExporterPortNumber),
+				fmt.Sprintf("--address=:%d", memcached.Spec.Monitor.Prometheus.Port),
 				"--v=3",
 			},
 			Image:           docker.ImageOperator + ":" + c.opt.ExporterTag,
@@ -149,7 +149,7 @@ func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deploymen
 				{
 					Name:          api.PrometheusExporterPortName,
 					Protocol:      core.ProtocolTCP,
-					ContainerPort: int32(api.PrometheusExporterPortNumber),
+					ContainerPort: memcached.Spec.Monitor.Prometheus.Port,
 				},
 			},
 		}

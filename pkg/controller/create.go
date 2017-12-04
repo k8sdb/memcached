@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/appscode/go/types"
-	api "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/k8sdb/apimachinery/pkg/docker"
+	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	"github.com/kubedb/apimachinery/pkg/docker"
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"

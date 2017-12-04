@@ -3,9 +3,9 @@ package e2e_test
 import (
 	"fmt"
 
-	api "github.com/k8sdb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/k8sdb/memcached/test/e2e/framework"
-	"github.com/k8sdb/memcached/test/e2e/matcher"
+	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	"github.com/kubedb/memcached/test/e2e/framework"
+	"github.com/kubedb/memcached/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

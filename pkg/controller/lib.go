@@ -9,7 +9,6 @@ import (
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	"github.com/appscode/kutil"
-	"github.com/golang/glog"
 	apps "k8s.io/api/apps/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -80,7 +79,7 @@ func tryPatchDeployment(c kubernetes.Interface, meta metav1.ObjectMeta, transfor
 			result, e2 = patchDeployments(c, cur, transform)
 			return e2 == nil, nil
 		}
-		glog.Errorf("Attempt %d failed to patch Deployments %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
+		log.Errorf("Attempt %d failed to patch Deployments %s/%s due to %v.", attempt, cur.Namespace, cur.Name, e2)
 		return false, nil
 	})
 
@@ -108,7 +107,7 @@ func patchDeployments(c kubernetes.Interface, cur *apps.Deployment, transform fu
 	if len(patch) == 0 || string(patch) == "{}" {
 		return cur, nil
 	}
-	glog.V(3).Infof("Patching Deployment %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
+	log.Infof("Patching Deployment %s/%s with %s.", cur.Namespace, cur.Name, string(patch))
 	return c.AppsV1beta1().Deployments(cur.Namespace).Patch(cur.Name, typ.StrategicMergePatchType, patch)
 }
 

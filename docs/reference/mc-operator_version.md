@@ -4,7 +4,6 @@ Prints binary version number.
 
 ### Synopsis
 
-
 Prints binary version number.
 
 ```
@@ -33,5 +32,6 @@ mc-operator version [flags]
 ```
 
 ### SEE ALSO
+
 * [mc-operator](mc-operator.md)	 - 
 

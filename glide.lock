@@ -1,5 +1,5 @@
-hash: 946b6d252583a945d9c8015e3c788e030f3332e3ffd924d7f633fb15abd3970d
-updated: 2017-12-15T15:06:30.977883711+06:00
+hash: 3504ba01bb3bdaab72d90f44ac7ef55e0435b6c90439ce9ff2be520be1759179
+updated: 2017-12-15T17:39:57.808181344+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -303,7 +303,9 @@ imports:
   subpackages:
   - doc
 - name: github.com/spf13/pflag
-  version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
+  version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
+- name: github.com/the-redback/go-oneliners
+  version: bcec1af62911e852baddf07214f883258c2c179e
 - name: golang.org/x/crypto
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:
@@ -526,6 +528,7 @@ imports:
   - util/flowcontrol
   - util/homedir
   - util/integer
+  - util/workqueue
 - name: k8s.io/kube-openapi
   version: 868f2f29720b192240e18284659231b440f9cda5
   subpackages:
@@ -557,3 +560,5 @@ testImports:
   - reporters/stenographer/support/go-colorable
   - reporters/stenographer/support/go-isatty
   - types
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0

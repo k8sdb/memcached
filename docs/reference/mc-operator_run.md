@@ -4,7 +4,6 @@ Run Memcached in Kubernetes
 
 ### Synopsis
 
-
 Run Memcached in Kubernetes
 
 ```
@@ -39,5 +38,6 @@ mc-operator run [flags]
 ```
 
 ### SEE ALSO
+
 * [mc-operator](mc-operator.md)	 - 
 

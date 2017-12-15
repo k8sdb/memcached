@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"reflect"
+	"fmt"
 	"time"
 
 	"github.com/appscode/go/hold"
@@ -13,17 +13,20 @@ import (
 	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	amc "github.com/kubedb/apimachinery/pkg/controller"
 	"github.com/kubedb/apimachinery/pkg/eventer"
+	"github.com/the-redback/go-oneliners"
 	core "k8s.io/api/core/v1"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiext_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
+	rt "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/workqueue"
 )
 
 type Options struct {
@@ -37,6 +40,8 @@ type Options struct {
 	Address string
 	// Enable RBAC for database workloads
 	EnableRbac bool
+	//Max number requests for retries
+	MaxNumRequeues int
 }
 
 type Controller struct {
@@ -53,6 +58,12 @@ type Controller struct {
 	opt Options
 	// sync time to sync the list.
 	syncPeriod time.Duration
+
+	// Workqueue
+	indexer        cache.Indexer
+	queue          workqueue.RateLimitingInterface
+	informer       cache.Controller
+	deletedIndexer cache.Indexer
 }
 
 var _ amc.Deleter = &Controller{}
@@ -106,8 +117,18 @@ func (c *Controller) RunAndHold() {
 }
 
 func (c *Controller) watchMemcached() {
+	c.initWatcher()
+
+	stop := make(chan struct{})
+	defer close(stop)
+
+	c.runWatcher(1, stop)
+	select{}
+}
+
+func (c *Controller) initWatcher() {
 	lw := &cache.ListWatch{
-		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
+		ListFunc: func(opts metav1.ListOptions) (rt.Object, error) {
 			return c.ExtClient.Memcacheds(metav1.NamespaceAll).List(metav1.ListOptions{})
 		},
 		WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
@@ -115,52 +136,140 @@ func (c *Controller) watchMemcached() {
 		},
 	}
 
-	_, cacheController := cache.NewInformer(
-		lw,
-		&api.Memcached{},
-		c.syncPeriod,
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				memcached := obj.(*api.Memcached)
-				util.AssignTypeKind(memcached)
-				setMonitoringPort(memcached)
-				if memcached.Status.CreationTime == nil {
-					if err := c.create(memcached); err != nil {
-						log.Errorln(err)
-						c.pushFailureEvent(memcached, err.Error())
-					}
-				}
-			},
-			DeleteFunc: func(obj interface{}) {
-				memcached := obj.(*api.Memcached)
-				util.AssignTypeKind(memcached)
-				setMonitoringPort(memcached)
-				if err := c.pause(memcached); err != nil {
-					log.Errorln(err)
-				}
-			},
-			UpdateFunc: func(old, new interface{}) {
-				oldObj, ok := old.(*api.Memcached)
-				if !ok {
-					return
-				}
-				newObj, ok := new.(*api.Memcached)
-				if !ok {
-					return
-				}
-				util.AssignTypeKind(oldObj)
-				util.AssignTypeKind(newObj)
-				setMonitoringPort(oldObj)
-				setMonitoringPort(newObj)
-				if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
-					if err := c.update(oldObj, newObj); err != nil {
-						log.Errorln(err)
-					}
-				}
-			},
+	// create the workqueue
+	c.queue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "restic")
+
+	// Bind the workqueue to a cache with the help of an informer. This way we make sure that
+	// whenever the cache is updated, the pod key is added to the workqueue.
+	// Note that when we finally process the item from the workqueue, we might see a newer version
+	// of the Restic than the version which was responsible for triggering the update.
+	c.indexer, c.informer = cache.NewIndexerInformer(lw, &api.Memcached{}, c.syncPeriod, cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(obj)
+			if err == nil {
+				c.queue.Add(key)
+				//c.deletedIndexer.Delete(obj)
+			}
 		},
-	)
-	cacheController.Run(wait.NeverStop)
+		DeleteFunc: func(obj interface{}) {
+			// IndexerInformer uses a delta queue, therefore for deletes we have to use this
+			// key function.
+			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
+			if err == nil {
+				c.deletedIndexer.Add(obj)
+				c.queue.Add(key)
+			}
+		},
+		UpdateFunc: func(old, new interface{}) {
+			key, err := cache.MetaNamespaceKeyFunc(new)
+			if err == nil {
+				c.queue.Add(key)
+			}
+		},
+	}, cache.Indexers{})
+
+}
+
+func (c *Controller) runWatcher(threadiness int, stopCh chan struct{}) {
+
+	defer runtime.HandleCrash()
+
+	// Let the workers stop when we are done
+	defer c.queue.ShutDown()
+	log.Infof("Starting Pod controller")
+
+	go c.informer.Run(stopCh)
+
+	// Wait for all involved caches to be synced, before processing items from the queue is started
+	if !cache.WaitForCacheSync(stopCh, c.informer.HasSynced) {
+		runtime.HandleError(fmt.Errorf("Timed out waiting for caches to sync"))
+		return
+	}
+
+	for i := 0; i < threadiness; i++ {
+		go wait.Until(c.runWorker, time.Second, stopCh)
+	}
+
+	<-stopCh
+	log.Infof("Stopping Pod controller")
+
+}
+
+func (c *Controller) runWorker() {
+	for c.processNextItem() {
+	}
+}
+
+func (c *Controller) processNextItem() bool {
+	// Wait until there is a new item in the working queue
+	key, quit := c.queue.Get()
+	if quit {
+		return false
+	}
+	oneliners.FILE("key:", key)
+	// Tell the queue that we are done with processing this key. This unblocks the key for other workers
+	// This allows safe parallel processing because two pods with the same key are never processed in
+	// parallel.
+	defer c.queue.Done(key)
+
+	// Invoke the method containing the business logic
+	//oneliners.PrettyJson(key.(string), "Added key")
+	// Handle the error if something went wrong during the execution of the business logic
+
+	// Invoke the method containing the business logic
+	err := c.runMemcachedInjector(key.(string))
+	if err == nil {
+		// Forget about the #AddRateLimited history of the key on every successful synchronization.
+		// This ensures that future processing of updates for this key is not delayed because of
+		// an outdated error history.
+		c.queue.Forget(key)
+		return true
+	}
+	log.Errorf("Failed to process Memcached %v. Reason: %s", key, err)
+
+	// This controller retries 5 times if something goes wrong. After that, it stops trying.
+	if c.queue.NumRequeues(key) < c.opt.MaxNumRequeues {
+		log.Infof("Error syncing deployment %v: %v", key, err)
+
+		// Re-enqueue the key rate limited. Based on the rate limiter on the
+		// queue and the re-enqueue history, the key will be processed later again.
+		c.queue.AddRateLimited(key)
+		return true
+	}
+
+	c.queue.Forget(key)
+	// Report to an external entity that, even after several retries, we could not successfully process this key
+	runtime.HandleError(err)
+	log.Infof("Dropping deployment %q out of the queue: %v", key, err)
+	return true
+}
+
+func (c *Controller) runMemcachedInjector(key string) error {
+	obj, exists, err := c.indexer.GetByKey(key)
+	if err != nil {
+		log.Errorf("Fetching object with key %s from store failed with %v", key, err)
+		return err
+	}
+
+	if !exists {
+		// Below we will warm up our cache with a Pod, so that we will see a delete for one pod
+		fmt.Println("------------------------------------------------------------------------------------------")
+		fmt.Printf("Memcached `%s` does not exist anymore\n", key)
+
+		if obj, exists, err = c.deletedIndexer.GetByKey(key); err == nil && exists {
+			oneliners.PrettyJson(obj, "Deleted object")
+
+			c.deletedIndexer.Delete(key)
+		}
+	} else {
+		// Note that you also have to check the uid if you have a local controlled resource, which
+		// is dependent on the actual instance, to detect that a Pod was recreated with the same name
+		d := obj.(*api.Memcached)
+		c.create(d) //todo: handle later
+		fmt.Printf("Sync/Add/Update for Pod %s\n", d.GetName())
+		oneliners.PrettyJson(d)
+	}
+	return nil
 }
 
 func setMonitoringPort(memcached *api.Memcached) {
@@ -178,7 +287,7 @@ func (c *Controller) watchDeletedDatabase() {
 	}
 	// Watch with label selector
 	lw := &cache.ListWatch{
-		ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
+		ListFunc: func(opts metav1.ListOptions) (rt.Object, error) {
 			return c.ExtClient.DormantDatabases(metav1.NamespaceAll).List(
 				metav1.ListOptions{
 					LabelSelector: labels.SelectorFromSet(labelMap).String(),

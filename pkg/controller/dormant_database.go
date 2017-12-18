@@ -74,3 +74,30 @@ func (c *Controller) ResumeDatabase(dormantDb *api.DormantDatabase) error {
 	_, err := c.ExtClient.Memcacheds(memcached.Namespace).Create(memcached)
 	return err
 }
+
+func (c *Controller) createDormantDatabase(memcached *api.Memcached) (*api.DormantDatabase, error) {
+	dormantDb := &api.DormantDatabase{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      memcached.Name,
+			Namespace: memcached.Namespace,
+			Labels: map[string]string{
+				api.LabelDatabaseKind: api.ResourceKindMemcached,
+			},
+		},
+		Spec: api.DormantDatabaseSpec{
+			Origin: api.Origin{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        memcached.Name,
+					Namespace:   memcached.Namespace,
+					Labels:      memcached.Labels,
+					Annotations: memcached.Annotations,
+				},
+				Spec: api.OriginSpec{
+					Memcached: &memcached.Spec,
+				},
+			},
+		},
+	}
+
+	return c.ExtClient.DormantDatabases(dormantDb.Namespace).Create(dormantDb)
+}

@@ -157,7 +157,7 @@ func (c *Controller) initWatcher() {
 				c.deletedIndexer.Delete(obj)
 				keyExists[key] = true
 			} else if exists {
-				log.Debugf("Key:",key ,"already processing. Not added new key")
+				log.Debugf("Key:", key, "already processing. Not added new key")
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
@@ -186,7 +186,7 @@ func (c *Controller) initWatcher() {
 					c.queue.Add(key)
 					keyExists[key] = true
 				} else if exists {
-					log.Debugf("Key:",key ,"already processing. Not added updated key")
+					log.Debugf("Key:", key, "already processing. Not added updated key")
 				}
 			}
 		},

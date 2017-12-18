@@ -21,7 +21,7 @@ func (c *Controller) deleteRole(memcached *api.Memcached) error {
 	return nil
 }
 
-func (c *Controller) createRole(memcached *api.Memcached) error {
+func (c *Controller) ensureRole(memcached *api.Memcached) error {
 	// Create new Roles
 	_, err := rbac_util.CreateOrPatchRole(
 		c.Client,
@@ -106,13 +106,9 @@ func (c *Controller) createRoleBinding(memcached *api.Memcached) error {
 	return err
 }
 
-func (c *Controller) createRBACStuff(memcached *api.Memcached) error {
-	// Delete Existing Role
-	if err := c.deleteRole(memcached); err != nil {
-		return err
-	}
+func (c *Controller) ensureRBACStuff(memcached *api.Memcached) error {
 	// Create New Role
-	if err := c.createRole(memcached); err != nil {
+	if err := c.ensureRole(memcached); err != nil {
 		return err
 	}
 
@@ -125,11 +121,8 @@ func (c *Controller) createRBACStuff(memcached *api.Memcached) error {
 
 	// Create New RoleBinding
 	if err := c.createRoleBinding(memcached); err != nil {
-		if !kerr.IsAlreadyExists(err) {
-			return err
-		}
+		return err
 	}
-
 	return nil
 }
 

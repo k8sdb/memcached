@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 
@@ -25,15 +24,24 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		})
 
 		if err != nil {
-			c.recorder.Eventf(memcached.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+			c.recorder.Eventf(
+				memcached.ObjectReference(),
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToUpdate,
+				err.Error())
 			return err
 		}
 	}
 
 	if err := validator.ValidateMemcached(c.Client, memcached); err != nil {
-		c.recorder.Event(memcached.ObjectReference(), core.EventTypeWarning, eventer.EventReasonInvalid, err.Error())
+		c.recorder.Event(
+			memcached.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonInvalid,
+			err.Error())
 		return err
 	}
+
 	// Event for successful validation
 	c.recorder.Event(
 		memcached.ObjectReference(),
@@ -43,32 +51,8 @@ func (c *Controller) create(memcached *api.Memcached) error {
 	)
 
 	// Check DormantDatabase
-	matched, err := c.matchDormantDatabase(memcached)
-	if err != nil {
+	if matched, err := c.matchDormantDatabase(memcached); err != nil || matched {
 		return err
-	}
-	if matched {
-		memcached.Annotations = map[string]string{
-			"kubedb.com/ignore": "",
-		}
-		if err := c.ExtClient.Memcacheds(memcached.Namespace).Delete(memcached.Name, &metav1.DeleteOptions{}); err != nil {
-			return fmt.Errorf(
-				`Failed to resume Memcached "%v" from DormantDatabase "%v". Error: %v`,
-				memcached.Name,
-				memcached.Name,
-				err,
-			)
-		}
-
-		_, err := util.TryPatchDormantDatabase(c.ExtClient, memcached.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
-			in.Spec.Resume = true
-			return in
-		})
-		if err != nil {
-			c.recorder.Eventf(memcached.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
-			return err
-		}
-		return nil
 	}
 
 	// Event for notification that kubernetes objects are creating
@@ -131,20 +115,20 @@ func (c *Controller) matchDormantDatabase(memcached *api.Memcached) (bool, error
 		return false, nil
 	}
 
-	var sendEvent = func(message string) (bool, error) {
-		c.recorder.Event(
+	var sendEvent = func(message string, args ...interface{}) (bool, error) {
+		c.recorder.Eventf(
 			memcached.ObjectReference(),
 			core.EventTypeWarning,
 			eventer.EventReasonFailedToCreate,
 			message,
+			args,
 		)
-		return false, errors.New(message)
+		return false, fmt.Errorf(message, args)
 	}
 
 	// Check DatabaseKind
 	if dormantDb.Labels[api.LabelDatabaseKind] != api.ResourceKindMemcached {
-		return sendEvent(fmt.Sprintf(`Invalid Memcached: "%v". Exists DormantDatabase "%v" of different Kind`,
-			memcached.Name, dormantDb.Name))
+		return sendEvent(fmt.Sprintf(`Invalid Memcached: "%v". Exists DormantDatabase "%v" of different Kind`, memcached.Name, dormantDb.Name))
 	}
 
 	// Check Origin Spec
@@ -155,89 +139,20 @@ func (c *Controller) matchDormantDatabase(memcached *api.Memcached) (bool, error
 		return sendEvent("Memcached spec mismatches with OriginSpec in DormantDatabases")
 	}
 
-	return true, nil
-}
-
-func (c *Controller) ensureService(memcached *api.Memcached) error {
-	// Check if service name exists
-	found, err := c.findService(memcached)
-	if err != nil {
-		return err
-	}
-	if found {
-		return nil
+	if err := c.ExtClient.Memcacheds(memcached.Namespace).Delete(memcached.Name, &metav1.DeleteOptions{}); err != nil {
+		return sendEvent(`failed to resume Memcached "%v" from DormantDatabase "%v". Error: %v`, memcached.Name, memcached.Name, err)
 	}
 
-	// create database Service
-	if err := c.createService(memcached); err != nil {
-		c.recorder.Eventf(
-			memcached.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToCreate,
-			"Failed to create Service. Reason: %v",
-			err,
-		)
-		return err
-	}
-	return nil
-}
-
-func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
-	found, err := c.findDeployment(memcached)
-	if err != nil {
-		return err
-	}
-	if found {
-		return nil
-	}
-
-	// Create deployment for Memcached database
-	deployment, err := c.createDeployment(memcached)
-	if err != nil {
-		c.recorder.Eventf(
-			memcached.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToCreate,
-			"Failed to create Deployment. Reason: %v",
-			err,
-		)
-		return err
-	}
-
-	_memcached, err := c.ExtClient.Memcacheds(memcached.Namespace).Get(memcached.Name, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	memcached = _memcached
-
-	// Check Deployment Pod status
-	if err := c.CheckDeploymentPodStatus(deployment, durationCheckDeployment); err != nil {
-		c.recorder.Eventf(
-			memcached.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToStart,
-			`Failed to create Deployment. Reason: %v`,
-			err,
-		)
-		return err
-	} else {
-		c.recorder.Event(
-			memcached.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulCreate,
-			"Successfully created Deployment",
-		)
-	}
-
-	_, err = util.TryPatchMemcached(c.ExtClient, memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
-		in.Status.Phase = api.DatabasePhaseRunning
+	_, err = util.PatchDormantDatabase(c.ExtClient, dormantDb, func(in *api.DormantDatabase) *api.DormantDatabase {
+		in.Spec.Resume = true
 		return in
 	})
 	if err != nil {
-		c.recorder.Eventf(memcached, core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
-		return err
+		c.recorder.Eventf(memcached.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+		return sendEvent(err.Error())
 	}
-	return nil
+
+	return true, nil
 }
 
 func (c *Controller) pause(memcached *api.Memcached) error {
@@ -355,5 +270,24 @@ func (c *Controller) update(oldMemcached, updatedMemcached *api.Memcached) error
 		)
 
 	}
+	return nil
+}
+
+func (c *Controller) reCreateMemcached(memcached *api.Memcached) error {
+	_memcached := &api.Memcached{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        memcached.Name,
+			Namespace:   memcached.Namespace,
+			Labels:      memcached.Labels,
+			Annotations: memcached.Annotations,
+		},
+		Spec:   memcached.Spec,
+		Status: memcached.Status,
+	}
+
+	if _, err := c.ExtClient.Memcacheds(_memcached.Namespace).Create(_memcached); err != nil {
+		return err
+	}
+
 	return nil
 }

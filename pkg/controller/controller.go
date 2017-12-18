@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/appscode/go/hold"
@@ -67,6 +68,7 @@ type Controller struct {
 }
 
 var _ amc.Deleter = &Controller{}
+var existKey map[string]bool
 
 func New(
 	client kubernetes.Interface,
@@ -123,7 +125,7 @@ func (c *Controller) watchMemcached() {
 	defer close(stop)
 
 	c.runWatcher(1, stop)
-	select{}
+	select {}
 }
 
 func (c *Controller) initWatcher() {
@@ -137,18 +139,29 @@ func (c *Controller) initWatcher() {
 	}
 
 	// create the workqueue
-	c.queue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "restic")
+	c.queue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "memcached")
+
+	// stored deleted objects
+	c.deletedIndexer = cache.NewIndexer(cache.DeletionHandlingMetaNamespaceKeyFunc, cache.Indexers{})
+
+	existKey = make(map[string]bool)
 
 	// Bind the workqueue to a cache with the help of an informer. This way we make sure that
 	// whenever the cache is updated, the pod key is added to the workqueue.
 	// Note that when we finally process the item from the workqueue, we might see a newer version
-	// of the Restic than the version which was responsible for triggering the update.
+	// of the Memcached than the version which was responsible for triggering the update.
 	c.indexer, c.informer = cache.NewIndexerInformer(lw, &api.Memcached{}, c.syncPeriod, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(obj)
-			if err == nil {
+			exists, ok := existKey[key]
+			fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>exists", exists, "ok", ok)
+			if exists, _ := existKey[key]; err == nil && !exists {
 				c.queue.Add(key)
-				//c.deletedIndexer.Delete(obj)
+				c.deletedIndexer.Delete(obj)
+				existKey[key] = true
+				oneliners.PrettyJson(obj, "add func")
+			} else if exists {
+				log.Infof("Key already processing. Not added new key")
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
@@ -161,13 +174,30 @@ func (c *Controller) initWatcher() {
 			}
 		},
 		UpdateFunc: func(old, new interface{}) {
-			key, err := cache.MetaNamespaceKeyFunc(new)
-			if err == nil {
-				c.queue.Add(key)
+			oldObj, ok := old.(*api.Memcached)
+			if !ok {
+				log.Errorln("Invalid Memcached object")
+				return
+			}
+			newObj, ok := new.(*api.Memcached)
+			if !ok {
+				log.Errorln("Invalid Memcached object")
+				return
+			}
+			if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
+				key, err := cache.MetaNamespaceKeyFunc(new)
+				exists, ok := existKey[key]
+				fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>exists", exists, "ok", ok)
+				if exists, _ := existKey[key]; err == nil && !exists {
+					c.queue.Add(key)
+					oneliners.PrettyJson(new, "update func")
+					existKey[key] = true
+				} else if exists {
+					log.Infof("Key already processing. Not added updated key")
+				}
 			}
 		},
 	}, cache.Indexers{})
-
 }
 
 func (c *Controller) runWatcher(threadiness int, stopCh chan struct{}) {
@@ -191,12 +221,15 @@ func (c *Controller) runWatcher(threadiness int, stopCh chan struct{}) {
 	}
 
 	<-stopCh
-	log.Infof("Stopping Pod controller")
+	log.Infof("Stopping Memcached controller")
 
 }
 
 func (c *Controller) runWorker() {
+	i := 1 //todo: delete
 	for c.processNextItem() {
+		fmt.Println("....................................", i) //delete
+		i++                                                    //delete
 	}
 }
 
@@ -206,7 +239,6 @@ func (c *Controller) processNextItem() bool {
 	if quit {
 		return false
 	}
-	oneliners.FILE("key:", key)
 	// Tell the queue that we are done with processing this key. This unblocks the key for other workers
 	// This allows safe parallel processing because two pods with the same key are never processed in
 	// parallel.
@@ -223,6 +255,8 @@ func (c *Controller) processNextItem() bool {
 		// This ensures that future processing of updates for this key is not delayed because of
 		// an outdated error history.
 		c.queue.Forget(key)
+		log.Infof("Setting existsKey to false.")
+		existKey[key.(string)] = false
 		return true
 	}
 	log.Errorf("Failed to process Memcached %v. Reason: %s", key, err)
@@ -238,6 +272,9 @@ func (c *Controller) processNextItem() bool {
 	}
 
 	c.queue.Forget(key)
+	log.Infof("Setting existsKey to false.")
+	fmt.Println("############### >>>>>>>>>>>>>>>>> set existsKey = false")
+	existKey[key.(string)] = false
 	// Report to an external entity that, even after several retries, we could not successfully process this key
 	runtime.HandleError(err)
 	log.Infof("Dropping deployment %q out of the queue: %v", key, err)
@@ -257,7 +294,9 @@ func (c *Controller) runMemcachedInjector(key string) error {
 		fmt.Printf("Memcached `%s` does not exist anymore\n", key)
 
 		if obj, exists, err = c.deletedIndexer.GetByKey(key); err == nil && exists {
-			oneliners.PrettyJson(obj, "Deleted object")
+			d := obj.(*api.Memcached)
+			oneliners.PrettyJson(d.DeepCopy(), "Deleted object")
+			c.pause(d.DeepCopy())
 
 			c.deletedIndexer.Delete(key)
 		}
@@ -265,9 +304,9 @@ func (c *Controller) runMemcachedInjector(key string) error {
 		// Note that you also have to check the uid if you have a local controlled resource, which
 		// is dependent on the actual instance, to detect that a Pod was recreated with the same name
 		d := obj.(*api.Memcached)
-		c.create(d) //todo: handle later
-		fmt.Printf("Sync/Add/Update for Pod %s\n", d.GetName())
-		oneliners.PrettyJson(d)
+		oneliners.PrettyJson(d.DeepCopy(), "creating object")
+		fmt.Printf("Sync/Add/Update for Memcacheds %s\n", d.GetName())
+		c.create(d.DeepCopy()) //todo: handle later
 	}
 	return nil
 }

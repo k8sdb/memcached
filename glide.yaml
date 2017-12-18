@@ -10,7 +10,7 @@ import:
   version: client-go-5
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/kubedb/apimachinery
-  version: master
+  version: dPatch
 - package: github.com/prometheus/client_golang
   version: v0.8.0
 - package: github.com/prometheus/common
@@ -35,8 +35,10 @@ import:
   repo: https://github.com/appscode/kubernetes.git
   version: v1.8.3
   vcs: git
-testImport:
-- package: github.com/onsi/ginkgo
-  version: v1.4.0
 - package: github.com/onsi/gomega
   version: v1.2.0
+- package: github.com/onsi/ginkgo
+  version: v1.4.0
+testImport:
+- package: github.com/stretchr/testify
+  version: v1.1.4

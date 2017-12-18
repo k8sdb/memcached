@@ -16,16 +16,18 @@ import (
 )
 
 func (c *Controller) create(memcached *api.Memcached) error {
-	_, err := util.TryPatchMemcached(c.ExtClient, memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
-		t := metav1.Now()
-		in.Status.CreationTime = &t
-		in.Status.Phase = api.DatabasePhaseCreating
-		return in
-	})
+	if memcached.Status.CreationTime == nil {
+		_, err := util.TryPatchMemcached(c.ExtClient, memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
+			t := metav1.Now()
+			in.Status.CreationTime = &t
+			in.Status.Phase = api.DatabasePhaseCreating
+			return in
+		})
 
-	if err != nil {
-		c.recorder.Eventf(memcached.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
-		return err
+		if err != nil {
+			c.recorder.Eventf(memcached.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+			return err
+		}
 	}
 
 	if err := validator.ValidateMemcached(c.Client, memcached); err != nil {
@@ -209,7 +211,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
 	memcached = _memcached
 
 	// Check Deployment Pod status
-	if err := c.checkDeploymentPodStatus(deployment, durationCheckDeployment); err != nil {
+	if err := c.CheckDeploymentPodStatus(deployment, durationCheckDeployment); err != nil {
 		c.recorder.Eventf(
 			memcached.ObjectReference(),
 			core.EventTypeWarning,

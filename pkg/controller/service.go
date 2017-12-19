@@ -57,28 +57,63 @@ func (c *Controller) createService(memcached *api.Memcached) error {
 	}
 
 	_, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
-		in.Labels = memcached.OffshootLabels()
-		in.Spec = core.ServiceSpec{
-			Ports: []core.ServicePort{
-				{
-					Name:       "db",
-					Port:       11211,
-					TargetPort: intstr.FromString("db"),
-				},
-			},
-			Selector: memcached.OffshootLabels(),
-		}
 
-		if memcached.Spec.Monitor != nil &&
-			memcached.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
-			memcached.Spec.Monitor.Prometheus != nil {
-			in.Spec.Ports = append(in.Spec.Ports, core.ServicePort{
-				Name:       api.PrometheusExporterPortName,
-				Port:       memcached.Spec.Monitor.Prometheus.Port,
-				TargetPort: intstr.FromString(api.PrometheusExporterPortName),
-			})
-		}
+		in.Labels = memcached.OffshootLabels()
+		in.Spec.Ports = upsertServicePort(in, memcached)
+		in.Spec.Selector = memcached.OffshootLabels()
+
 		return in
 	})
 	return err
+}
+
+func upsertServicePort(service *core.Service, memcached *api.Memcached) []core.ServicePort {
+	desiredPorts := []core.ServicePort{
+		{
+			Name:       "db",
+			Protocol:   core.ProtocolTCP,
+			Port:       11211,
+			TargetPort: intstr.FromString("db"),
+		},
+	}
+
+	if memcached.Spec.Monitor != nil &&
+		memcached.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
+		memcached.Spec.Monitor.Prometheus != nil {
+		desiredPorts = append(desiredPorts, core.ServicePort{
+			Name:       api.PrometheusExporterPortName,
+			Protocol:   core.ProtocolTCP,
+			Port:       memcached.Spec.Monitor.Prometheus.Port,
+			TargetPort: intstr.FromString(api.PrometheusExporterPortName),
+		})
+	}
+	return updatePorts(service.Spec.Ports, desiredPorts)
+}
+
+func updatePorts(current, desired []core.ServicePort) []core.ServicePort {
+	if current == nil {
+		return desired
+	}
+
+	curPorts := make(map[int32]core.ServicePort)
+	for _, p := range current {
+		curPorts[p.Port] = p
+	}
+
+	for i, dp := range desired {
+		cp, ok := curPorts[dp.Port]
+
+		// svc port not found
+		if !ok {
+			continue
+		}
+
+		delete(curPorts, dp.Port)
+
+		if dp.NodePort == 0 {
+			dp.NodePort = cp.NodePort // avoid reassigning port
+		}
+		desired[i] = dp
+	}
+	return desired
 }

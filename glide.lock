@@ -1,5 +1,5 @@
 hash: e448e4b29d6f0d4c480aa234c0dce5f53d15f1235055bf38fb6aa3eeb7bf7174
-updated: 2017-12-18T14:33:30.504170884+06:00
+updated: 2017-12-19T10:01:22.698536043+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -21,7 +21,7 @@ imports:
   - version
   - wait
 - name: github.com/appscode/kutil
-  version: 4d48d2cfab8ea01cd3b58a8f494734725f60acda
+  version: 582273a0791d4d99ab1345d9e4867bec460aaf5a
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -35,7 +35,7 @@ imports:
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
 - name: github.com/appscode/osm
-  version: b3ed1c7835d33f312616b260a949589cf33311ee
+  version: ec3d9489c057fa228cd223c929622f3d341a4e8e
   subpackages:
   - context
 - name: github.com/appscode/pat
@@ -223,7 +223,7 @@ imports:
   - pkg/storage
   - pkg/validator
 - name: github.com/kubernetes/apimachinery
-  version: 5250765d28a6a1e07c6f09fe814a4b58ad74cc11
+  version: e7ad5e783d5cc59c1aa137f0b13c51baee6ee7c1
   subpackages:
   - pkg/conversion
 - name: github.com/mailru/easyjson
@@ -324,8 +324,6 @@ imports:
   - doc
 - name: github.com/spf13/pflag
   version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
-- name: github.com/the-redback/go-oneliners
-  version: bcec1af62911e852baddf07214f883258c2c179e
 - name: golang.org/x/crypto
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:
@@ -385,7 +383,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/api
-  version: 03a4a4fe3d2c5fb0d1a116cf20784fffa259a3d4
+  version: 6b7ad74b94d9a82bba8cc567eafc779770be4bed
   subpackages:
   - gensupport
   - googleapi

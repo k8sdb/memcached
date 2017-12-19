@@ -241,7 +241,7 @@ func (c *Controller) processNextItem() bool {
 		// This ensures that future processing of updates for this key is not delayed because of
 		// an outdated error history.
 		c.queue.Forget(key)
-		log.Debugf("Setting existsKey to false.")
+		log.Debugf("Setting keyExists to false.")
 		keyExists[key.(string)] = false
 		return true
 	}
@@ -258,7 +258,7 @@ func (c *Controller) processNextItem() bool {
 	}
 
 	c.queue.Forget(key)
-	log.Debugf("Setting existsKey to false.")
+	log.Debugf("Setting keyExists to false.")
 	keyExists[key.(string)] = false
 	// Report to an external entity that, even after several retries, we could not successfully process this key
 	runtime.HandleError(err)
@@ -291,15 +291,6 @@ func (c *Controller) runMemcachedInjector(key string) error {
 		}
 	}
 	return nil
-}
-
-func setMonitoringPort(memcached *api.Memcached) {
-	if memcached.Spec.Monitor != nil &&
-		memcached.Spec.Monitor.Prometheus != nil {
-		if memcached.Spec.Monitor.Prometheus.Port == 0 {
-			memcached.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
-		}
-	}
 }
 
 func (c *Controller) watchDeletedDatabase() {

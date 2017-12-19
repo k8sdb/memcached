@@ -56,10 +56,12 @@ var _ = BeforeSuite(func() {
 	By("Using kubeconfig from " + kubeconfigPath)
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	Expect(err).NotTo(HaveOccurred())
+
 	// Clients
-	kubeClient := kubernetes.NewForConfigOrDie(config)
+	kubeClient       := kubernetes.NewForConfigOrDie(config)
 	apiExtKubeClient := crd_cs.NewForConfigOrDie(config)
-	extClient := cs.NewForConfigOrDie(config)
+	extClient        := cs.NewForConfigOrDie(config)
+
 	// Framework
 	root = framework.New(kubeClient, extClient, storageClass)
 

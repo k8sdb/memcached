@@ -57,7 +57,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
 		}
 
 		in = upsertContainer(in, memcached)
-		in = upsertPort(in)
+		in = upsertDeploymentPort(in)
 
 		in.Spec.Template.Spec.NodeSelector = memcached.Spec.NodeSelector
 		in.Spec.Template.Spec.Affinity = memcached.Spec.Affinity
@@ -101,7 +101,12 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
 		return in
 	})
 	if err != nil {
-		c.recorder.Eventf(memcached, core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+		c.recorder.Eventf(
+			memcached,
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToUpdate,
+			err.Error(),
+		)
 		return err
 	}
 	*memcached = *mg
@@ -146,11 +151,11 @@ func upsertContainer(deployment *apps.Deployment, memcached *api.Memcached) *app
 	return deployment
 }
 
-func upsertPort(deployment *apps.Deployment) *apps.Deployment {
+func upsertDeploymentPort(deployment *apps.Deployment) *apps.Deployment {
 	getPorts := func() []core.ContainerPort {
 		portList := []core.ContainerPort{
 			{
-				Name:          "api",
+				Name:          "db",
 				ContainerPort: 11211,
 				Protocol:      core.ProtocolTCP,
 			},
@@ -193,85 +198,4 @@ func upsertMonitoringContainer(deployment *apps.Deployment, memcached *api.Memca
 		deployment.Spec.Template.Spec.Containers = containers
 	}
 	return deployment
-}
-
-func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deployment, error) {
-	// Deployment for Memcached database
-	if memcached.Spec.Replicas == 0 {
-		memcached.Spec.Replicas = 1
-	}
-	deployment := &apps.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        memcached.OffshootName(),
-			Namespace:   memcached.Namespace,
-			Labels:      memcached.DeploymentLabels(),
-			Annotations: memcached.DeploymentAnnotations(),
-		},
-		Spec: apps.DeploymentSpec{
-			Replicas: types.Int32P(memcached.Spec.Replicas),
-			Template: core.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: memcached.OffshootLabels(),
-				},
-				Spec: core.PodSpec{
-					Containers: []core.Container{
-						{
-							Name:            api.ResourceNameMemcached,
-							Image:           fmt.Sprintf("%s:%s", docker.ImageMemcached, memcached.Spec.Version),
-							ImagePullPolicy: core.PullIfNotPresent,
-							Ports: []core.ContainerPort{
-								{
-									Name:          "db",
-									ContainerPort: 11211,
-								},
-							},
-							Resources: memcached.Spec.Resources,
-						},
-					},
-					NodeSelector:  memcached.Spec.NodeSelector,
-					Affinity:      memcached.Spec.Affinity,
-					SchedulerName: memcached.Spec.SchedulerName,
-					Tolerations:   memcached.Spec.Tolerations,
-				},
-			},
-		},
-	}
-
-	if memcached.Spec.Monitor != nil &&
-		memcached.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
-		memcached.Spec.Monitor.Prometheus != nil {
-		exporter := core.Container{
-			Name: "exporter",
-			Args: []string{
-				"export",
-				fmt.Sprintf("--address=:%d", memcached.Spec.Monitor.Prometheus.Port),
-				"--v=3",
-			},
-			Image:           docker.ImageOperator + ":" + c.opt.ExporterTag,
-			ImagePullPolicy: core.PullIfNotPresent,
-			Ports: []core.ContainerPort{
-				{
-					Name:          api.PrometheusExporterPortName,
-					Protocol:      core.ProtocolTCP,
-					ContainerPort: memcached.Spec.Monitor.Prometheus.Port,
-				},
-			},
-		}
-		deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, exporter)
-	}
-
-	if c.opt.EnableRbac {
-		// Ensure ClusterRoles for database deployment
-		if err := c.ensureRBACStuff(memcached); err != nil {
-			return nil, err
-		}
-
-		deployment.Spec.Template.Spec.ServiceAccountName = memcached.Name
-	}
-
-	if _, err := c.Client.AppsV1beta1().Deployments(deployment.Namespace).Create(deployment); err != nil {
-		return nil, err
-	}
-
-	return deployment, nil
 }

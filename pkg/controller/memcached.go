@@ -16,7 +16,7 @@ import (
 
 func (c *Controller) create(memcached *api.Memcached) error {
 	if memcached.Status.CreationTime == nil {
-		_, err := util.TryPatchMemcached(c.ExtClient, memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
+		mc, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
 			t := metav1.Now()
 			in.Status.CreationTime = &t
 			in.Status.Phase = api.DatabasePhaseCreating
@@ -28,9 +28,16 @@ func (c *Controller) create(memcached *api.Memcached) error {
 				memcached.ObjectReference(),
 				core.EventTypeWarning,
 				eventer.EventReasonFailedToUpdate,
-				err.Error())
+				err.Error(),
+			)
 			return err
 		}
+		memcached.Status = mc.Status
+	}
+
+	// Assign Default Monitoring Port
+	if err := c.setMonitoringPort(memcached); err != nil {
+		return err
 	}
 
 	if err := validator.ValidateMemcached(c.Client, memcached); err != nil {
@@ -38,7 +45,8 @@ func (c *Controller) create(memcached *api.Memcached) error {
 			memcached.ObjectReference(),
 			core.EventTypeWarning,
 			eventer.EventReasonInvalid,
-			err.Error())
+			err.Error(),
+		)
 		return err
 	}
 
@@ -56,7 +64,12 @@ func (c *Controller) create(memcached *api.Memcached) error {
 	}
 
 	// Event for notification that kubernetes objects are creating
-	c.recorder.Event(memcached.ObjectReference(), core.EventTypeNormal, eventer.EventReasonCreating, "Creating Kubernetes objects")
+	c.recorder.Event(
+		memcached.ObjectReference(),
+		core.EventTypeNormal,
+		eventer.EventReasonCreating,
+		"Creating Kubernetes objects",
+	)
 
 	// ensure database Service
 	if err := c.ensureService(memcached); err != nil {
@@ -93,6 +106,30 @@ func (c *Controller) create(memcached *api.Memcached) error {
 			eventer.EventReasonSuccessfulCreate,
 			"Successfully added monitoring system.",
 		)
+	}
+	return nil
+}
+
+func (c *Controller) setMonitoringPort(memcached *api.Memcached) error {
+	if memcached.Spec.Monitor != nil &&
+		memcached.Spec.Monitor.Prometheus != nil {
+		if memcached.Spec.Monitor.Prometheus.Port == 0 {
+			mc, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
+				in.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
+				return in
+			})
+
+			if err != nil {
+				c.recorder.Eventf(
+					memcached.ObjectReference(),
+					core.EventTypeWarning,
+					eventer.EventReasonFailedToUpdate,
+					err.Error(),
+				)
+				return err
+			}
+			memcached.Spec = mc.Spec
+		}
 	}
 	return nil
 }
@@ -148,23 +185,32 @@ func (c *Controller) matchDormantDatabase(memcached *api.Memcached) (bool, error
 		return in
 	})
 	if err != nil {
-		c.recorder.Eventf(memcached.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
+		c.recorder.Eventf(
+			memcached.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToUpdate,
+			err.Error(),
+		)
 		return sendEvent(err.Error())
 	}
-
 	return true, nil
 }
 
 func (c *Controller) pause(memcached *api.Memcached) error {
-	if memcached.Annotations != nil {
-		if val, found := memcached.Annotations["kubedb.com/ignore"]; found {
-			//TODO: Add Event Reason "Ignored"
-			c.recorder.Event(memcached.ObjectReference(), core.EventTypeNormal, "Ignored", val)
-			return nil
+	c.recorder.Event(
+		memcached.ObjectReference(),
+		core.EventTypeNormal,
+		eventer.EventReasonPausing,
+		"Pausing Memcached",
+	)
+
+	// Assign default monitoring port
+	if memcached.Spec.Monitor != nil &&
+		memcached.Spec.Monitor.Prometheus != nil {
+		if memcached.Spec.Monitor.Prometheus.Port == 0 {
+			memcached.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
 		}
 	}
-
-	c.recorder.Event(memcached.ObjectReference(), core.EventTypeNormal, eventer.EventReasonPausing, "Pausing Memcached")
 
 	if memcached.Spec.DoNotPause {
 		c.recorder.Eventf(
@@ -232,7 +278,12 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 
 func (c *Controller) update(oldMemcached, updatedMemcached *api.Memcached) error {
 	if err := validator.ValidateMemcached(c.Client, updatedMemcached); err != nil {
-		c.recorder.Event(updatedMemcached.ObjectReference(), core.EventTypeWarning, eventer.EventReasonInvalid, err.Error())
+		c.recorder.Event(
+			updatedMemcached.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonInvalid,
+			err.Error(),
+		)
 		return err
 	}
 	// Event for successful validation

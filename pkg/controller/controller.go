@@ -146,7 +146,7 @@ func (c *Controller) initWatcher() {
 	keyExists = make(map[string]bool)
 
 	// Bind the workqueue to a cache with the help of an informer. This way we make sure that
-	// whenever the cache is updated, the pod key is added to the workqueue.
+	// whenever the cache is updated, the Memcached key is added to the workqueue.
 	// Note that when we finally process the item from the workqueue, we might see a newer version
 	// of the Memcached than the version which was responsible for triggering the update.
 	c.indexer, c.informer = cache.NewIndexerInformer(lw, &api.Memcached{}, c.syncPeriod, cache.ResourceEventHandlerFuncs{
@@ -199,7 +199,7 @@ func (c *Controller) runWatcher(threadiness int, stopCh chan struct{}) {
 
 	// Let the workers stop when we are done
 	defer c.queue.ShutDown()
-	log.Infof("Starting Pod controller")
+	log.Infof("Starting Memcached controller")
 
 	go c.informer.Run(stopCh)
 
@@ -230,7 +230,7 @@ func (c *Controller) processNextItem() bool {
 		return false
 	}
 	// Tell the queue that we are done with processing this key. This unblocks the key for other workers
-	// This allows safe parallel processing because two pods with the same key are never processed in
+	// This allows safe parallel processing because two Memcacheds with the same key are never processed in
 	// parallel.
 	defer c.queue.Done(key)
 
@@ -283,7 +283,7 @@ func (c *Controller) runMemcachedInjector(key string) error {
 		}
 	} else {
 		// Note that you also have to check the uid if you have a local controlled resource, which
-		// is dependent on the actual instance, to detect that a Pod was recreated with the same name
+		// is dependent on the actual instance, to detect that a Memcached was recreated with the same name
 		memcached := obj.(*api.Memcached)
 		if err := c.create(memcached.DeepCopy()); err != nil {
 			log.Errorln(err)

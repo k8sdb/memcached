@@ -31,7 +31,7 @@ func NewCmdRun() *cobra.Command {
 		GoverningService:  "kubedb",
 		Address:           ":8080",
 		EnableRbac:        false,
-		MaxNumRequeues:    10,
+		MaxNumRequeues:    5,
 	}
 
 	cmd := &cobra.Command{
@@ -43,6 +43,7 @@ func NewCmdRun() *cobra.Command {
 				log.Fatalf("Could not get kubernetes config: %s", err)
 			}
 
+			// Clients
 			client := kubernetes.NewForConfigOrDie(config)
 			apiExtKubeClient := apiext_cs.NewForConfigOrDie(config)
 			extClient := cs.NewForConfigOrDie(config)
@@ -54,7 +55,6 @@ func NewCmdRun() *cobra.Command {
 			cronController := amc.NewCronController(client, extClient)
 			// Start Cron
 			cronController.StartCron()
-			// Stop Cron
 			defer cronController.StopCron()
 
 			w := controller.New(client, apiExtKubeClient, extClient, promClient, cronController, opt)

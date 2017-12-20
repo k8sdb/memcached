@@ -24,7 +24,7 @@ func (c *Controller) ensureService(memcached *api.Memcached) error {
 			memcached.ObjectReference(),
 			core.EventTypeWarning,
 			eventer.EventReasonFailedToCreate,
-			"Failed to create Service. Reason: %v",
+			"Failed to createOrPatch Service. Reason: %v",
 			err,
 		)
 		return err

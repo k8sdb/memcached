@@ -43,24 +43,8 @@ func (c *Controller) manageMonitor(memcached *api.Memcached) error {
 	if memcached.Spec.Monitor != nil {
 		return c.addOrUpdateMonitor(memcached)
 	} else {
-		demoMem := api.Memcached{
-			Spec: api.MemcachedSpec{
-				Monitor: &kapi.AgentSpec{
-					Agent: "coreos-prometheus-operator",
-					Prometheus: &kapi.PrometheusSpec{
-						Labels: map[string]string{
-							"app": "kubedb",
-						},
-					},
-				},
-			},
-		}
-		agent, err := c.newMonitorController(&demoMem)
-		if err != nil {
-			return err
-		}
+		agent := agents.New(kapi.AgentCoreOSPrometheus, c.Client, c.ApiExtKubeClient, c.promClient)
 		return agent.Add(memcached.StatsAccessor(), memcached.Spec.Monitor)
 	}
-
 	return nil
 }

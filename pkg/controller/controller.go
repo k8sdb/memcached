@@ -87,7 +87,7 @@ func New(
 		cronController:   cronController,
 		recorder:         eventer.NewEventRecorder(client, "Memcached operator"),
 		opt:              opt,
-		syncPeriod:       time.Minute * 2,
+		syncPeriod:       time.Minute * 5,
 	}
 }
 

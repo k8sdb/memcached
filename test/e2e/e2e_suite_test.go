@@ -8,6 +8,7 @@ import (
 
 	"github.com/appscode/go/log"
 	logs "github.com/appscode/go/log/golog"
+	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
 	amc "github.com/kubedb/apimachinery/pkg/controller"
@@ -61,6 +62,7 @@ var _ = BeforeSuite(func() {
 	kubeClient := kubernetes.NewForConfigOrDie(config)
 	apiExtKubeClient := crd_cs.NewForConfigOrDie(config)
 	extClient := cs.NewForConfigOrDie(config)
+	promClient, err := pcm.NewForConfig(config)
 
 	// Framework
 	root = framework.New(kubeClient, extClient, storageClass)
@@ -81,7 +83,7 @@ var _ = BeforeSuite(func() {
 	}
 
 	// Controller
-	ctrl = controller.New(kubeClient, apiExtKubeClient, extClient, nil, cronController, opt)
+	ctrl = controller.New(kubeClient, apiExtKubeClient, extClient, promClient, cronController, opt)
 	err = ctrl.Setup()
 	if err != nil {
 		log.Fatalln(err)

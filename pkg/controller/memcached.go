@@ -68,7 +68,7 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		memcached.ObjectReference(),
 		core.EventTypeNormal,
 		eventer.EventReasonCreating,
-		"Creating Kubernetes objects",
+		"Updating Kubernetes objects",
 	)
 
 	// ensure database Service
@@ -85,7 +85,7 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		memcached.ObjectReference(),
 		core.EventTypeNormal,
 		eventer.EventReasonSuccessfulCreate,
-		"Successfully created Memcached",
+		"Successfully updated Memcached",
 	)
 
 	if err := c.manageMonitor(memcached); err != nil {
@@ -126,7 +126,6 @@ func (c *Controller) setMonitoringPort(memcached *api.Memcached) error {
 			})
 
 			if err != nil {
-				fmt.Println("$$$$$$$$$$$$$$$ error:", err)
 				c.recorder.Eventf(
 					memcached.ObjectReference(),
 					core.EventTypeWarning,

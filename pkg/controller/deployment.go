@@ -83,7 +83,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
 			memcached.ObjectReference(),
 			core.EventTypeWarning,
 			eventer.EventReasonFailedToStart,
-			`Failed to create Deployment. Reason: %v`,
+			`Failed to CreateOrPatch Deployment. Reason: %v`,
 			err,
 		)
 		return err
@@ -92,7 +92,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
 			memcached.ObjectReference(),
 			core.EventTypeNormal,
 			eventer.EventReasonSuccessfulCreate,
-			"Successfully created Deployment",
+			"Successfully CreatedOrPatched Deployment",
 		)
 	}
 

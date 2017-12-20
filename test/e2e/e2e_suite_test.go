@@ -58,9 +58,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	// Clients
-	kubeClient       := kubernetes.NewForConfigOrDie(config)
+	kubeClient := kubernetes.NewForConfigOrDie(config)
 	apiExtKubeClient := crd_cs.NewForConfigOrDie(config)
-	extClient        := cs.NewForConfigOrDie(config)
+	extClient := cs.NewForConfigOrDie(config)
 
 	// Framework
 	root = framework.New(kubeClient, extClient, storageClass)

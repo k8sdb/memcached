@@ -88,23 +88,29 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		"Successfully created Memcached",
 	)
 
-	if memcached.Spec.Monitor != nil {
-		if err := c.addMonitor(memcached); err != nil {
-			c.recorder.Eventf(
-				memcached.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToCreate,
-				"Failed to add monitoring system. Reason: %v",
-				err,
-			)
-			log.Errorln(err)
-			return nil
-		}
+	if err := c.manageMonitor(memcached); err != nil {
+		c.recorder.Eventf(
+			memcached.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToCreate,
+			"Failed to manage monitoring system. Reason: %v",
+			err,
+		)
+		log.Errorln(err)
+		return nil
+	} else if memcached.Spec.Monitor != nil {
 		c.recorder.Event(
 			memcached.ObjectReference(),
 			core.EventTypeNormal,
 			eventer.EventReasonSuccessfulCreate,
 			"Successfully added monitoring system.",
+		)
+	} else {
+		c.recorder.Event(
+			memcached.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessfulCreate,
+			"Successfully updated monitoring system.",
 		)
 	}
 	return nil
@@ -120,6 +126,7 @@ func (c *Controller) setMonitoringPort(memcached *api.Memcached) error {
 			})
 
 			if err != nil {
+				fmt.Println("$$$$$$$$$$$$$$$ error:", err)
 				c.recorder.Eventf(
 					memcached.ObjectReference(),
 					core.EventTypeWarning,
@@ -272,54 +279,6 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 			eventer.EventReasonSuccessfulMonitorDelete,
 			"Successfully deleted monitoring system.",
 		)
-	}
-	return nil
-}
-
-func (c *Controller) update(oldMemcached, updatedMemcached *api.Memcached) error {
-	if err := validator.ValidateMemcached(c.Client, updatedMemcached); err != nil {
-		c.recorder.Event(
-			updatedMemcached.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonInvalid,
-			err.Error(),
-		)
-		return err
-	}
-	// Event for successful validation
-	c.recorder.Event(
-		updatedMemcached.ObjectReference(),
-		core.EventTypeNormal,
-		eventer.EventReasonSuccessfulValidate,
-		"Successfully validate Memcached",
-	)
-
-	if err := c.ensureService(updatedMemcached); err != nil {
-		return err
-	}
-	if err := c.ensureDeployment(updatedMemcached); err != nil {
-		return err
-	}
-
-	if !reflect.DeepEqual(oldMemcached.Spec.Monitor, updatedMemcached.Spec.Monitor) {
-		if err := c.updateMonitor(oldMemcached, updatedMemcached); err != nil {
-			c.recorder.Eventf(
-				updatedMemcached.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToUpdate,
-				"Failed to update monitoring system. Reason: %v",
-				err,
-			)
-			log.Errorln(err)
-			return nil
-		}
-		c.recorder.Event(
-			updatedMemcached.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulMonitorUpdate,
-			"Successfully updated monitoring system.",
-		)
-
 	}
 	return nil
 }

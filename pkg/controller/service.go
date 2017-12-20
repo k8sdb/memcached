@@ -87,33 +87,5 @@ func upsertServicePort(service *core.Service, memcached *api.Memcached) []core.S
 			TargetPort: intstr.FromString(api.PrometheusExporterPortName),
 		})
 	}
-	return updatePorts(service.Spec.Ports, desiredPorts)
-}
-
-func updatePorts(current, desired []core.ServicePort) []core.ServicePort {
-	if current == nil {
-		return desired
-	}
-
-	curPorts := make(map[int32]core.ServicePort)
-	for _, p := range current {
-		curPorts[p.Port] = p
-	}
-
-	for i, dp := range desired {
-		cp, ok := curPorts[dp.Port]
-
-		// svc port not found
-		if !ok {
-			continue
-		}
-
-		delete(curPorts, dp.Port)
-
-		if dp.NodePort == 0 {
-			dp.NodePort = cp.NodePort // avoid reassigning port
-		}
-		desired[i] = dp
-	}
-	return desired
+	return core_util.MergeServicePorts(service.Spec.Ports, desiredPorts)
 }

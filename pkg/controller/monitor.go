@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/kutil/tools/monitoring/agents"
+	kapi "github.com/appscode/kutil/tools/monitoring/api"
 	mona "github.com/appscode/kutil/tools/monitoring/api"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 )
@@ -22,7 +23,7 @@ func (c *Controller) newMonitorController(memcached *api.Memcached) (mona.Agent,
 	return nil, fmt.Errorf("monitoring controller not found for %v", monitorSpec)
 }
 
-func (c *Controller) addMonitor(memcached *api.Memcached) error {
+func (c *Controller) addOrUpdateMonitor(memcached *api.Memcached) error {
 	agent, err := c.newMonitorController(memcached)
 	if err != nil {
 		return err
@@ -38,16 +39,28 @@ func (c *Controller) deleteMonitor(memcached *api.Memcached) error {
 	return agent.Delete(memcached.StatsAccessor(), memcached.Spec.Monitor)
 }
 
-func (c *Controller) updateMonitor(oldMemcached, updatedMemcached *api.Memcached) error {
-	var err error
-	var agent mona.Agent
-	if updatedMemcached.Spec.Monitor == nil {
-		agent, err = c.newMonitorController(oldMemcached)
+func (c *Controller) manageMonitor(memcached *api.Memcached) error {
+	if memcached.Spec.Monitor != nil {
+		return c.addOrUpdateMonitor(memcached)
 	} else {
-		agent, err = c.newMonitorController(updatedMemcached)
+		demoMem := api.Memcached{
+			Spec: api.MemcachedSpec{
+				Monitor: &kapi.AgentSpec{
+					Agent: "coreos-prometheus-operator",
+					Prometheus: &kapi.PrometheusSpec{
+						Labels: map[string]string{
+							"app": "kubedb",
+						},
+					},
+				},
+			},
+		}
+		agent, err := c.newMonitorController(&demoMem)
+		if err != nil {
+			return err
+		}
+		return agent.Add(memcached.StatsAccessor(), memcached.Spec.Monitor)
 	}
-	if err != nil {
-		return err
-	}
-	return agent.Update(updatedMemcached.StatsAccessor(), oldMemcached.Spec.Monitor, updatedMemcached.Spec.Monitor)
+
+	return nil
 }

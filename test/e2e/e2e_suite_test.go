@@ -24,9 +24,11 @@ import (
 )
 
 var storageClass string
+var exporterTag string
 
 func init() {
 	flag.StringVar(&storageClass, "storageclass", "standard", "Kubernetes StorageClass name")
+	flag.StringVar(&exporterTag, "exporter-tag", "", "Tag of kubedb/operator used as exporter")
 }
 
 const (
@@ -80,6 +82,8 @@ var _ = BeforeSuite(func() {
 	opt := controller.Options{
 		OperatorNamespace: root.Namespace(),
 		GoverningService:  api.DatabaseNamePrefix,
+		MaxNumRequeues:    5,
+		ExporterTag:       exporterTag,
 	}
 
 	// Controller

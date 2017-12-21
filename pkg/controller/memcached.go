@@ -88,7 +88,7 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		"Successfully updated Memcached",
 	)
 
-	if err := c.manageMonitor(memcached); err != nil {
+	if ok, err := c.manageMonitor(memcached); err != nil {
 		c.recorder.Eventf(
 			memcached.ObjectReference(),
 			core.EventTypeWarning,
@@ -98,19 +98,19 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		)
 		log.Errorln(err)
 		return nil
-	} else if memcached.Spec.Monitor != nil {
-		c.recorder.Event(
-			memcached.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulCreate,
-			"Successfully added monitoring system.",
-		)
-	} else {
+	} else if memcached.Spec.Monitor != nil && ok {
 		c.recorder.Event(
 			memcached.ObjectReference(),
 			core.EventTypeNormal,
 			eventer.EventReasonSuccessfulCreate,
 			"Successfully updated monitoring system.",
+		)
+	} else if ok {
+		c.recorder.Event(
+			memcached.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessfulCreate,
+			"Successfully deleted monitoring system.",
 		)
 	}
 	return nil
@@ -261,7 +261,7 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 	)
 
 	if memcached.Spec.Monitor != nil {
-		if err := c.deleteMonitor(memcached); err != nil {
+		if ok, err := c.deleteMonitor(memcached); err != nil {
 			c.recorder.Eventf(
 				memcached.ObjectReference(),
 				core.EventTypeWarning,
@@ -271,13 +271,14 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 			)
 			log.Errorln(err)
 			return nil
+		} else if ok {
+			c.recorder.Event(
+				memcached.ObjectReference(),
+				core.EventTypeNormal,
+				eventer.EventReasonSuccessfulMonitorDelete,
+				"Successfully deleted monitoring system.",
+			)
 		}
-		c.recorder.Event(
-			memcached.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulMonitorDelete,
-			"Successfully deleted monitoring system.",
-		)
 	}
 	return nil
 }

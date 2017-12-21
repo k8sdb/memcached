@@ -56,7 +56,7 @@ func (c *Controller) createService(memcached *api.Memcached) error {
 		Namespace: memcached.Namespace,
 	}
 
-	_, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
+	_, _, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
 
 		in.Labels = memcached.OffshootLabels()
 		in.Spec.Ports = upsertServicePort(in, memcached)

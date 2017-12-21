@@ -46,7 +46,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
 		}
 	}
 
-	deployment, err := app_util.CreateOrPatchDeployment(c.Client, deploymentMeta, func(in *apps.Deployment) *apps.Deployment {
+	deployment, ok, err := app_util.CreateOrPatchDeployment(c.Client, deploymentMeta, func(in *apps.Deployment) *apps.Deployment {
 		in = upsertObjectMeta(in, memcached)
 
 		in.Spec.Replicas = types.Int32P(replicas)
@@ -87,7 +87,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
 			err,
 		)
 		return err
-	} else {
+	} else if ok {
 		c.recorder.Event(
 			memcached.ObjectReference(),
 			core.EventTypeNormal,

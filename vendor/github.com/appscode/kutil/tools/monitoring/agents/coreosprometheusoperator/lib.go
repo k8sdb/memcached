@@ -28,25 +28,40 @@ func New(k8sClient kubernetes.Interface, extClient ecs.ApiextensionsV1beta1Inter
 	}
 }
 
-func (agent *PrometheusCoreosOperator) Add(sp api.StatsAccessor, spec *api.AgentSpec) error {
-	return agent.Update(sp, spec)
-}
-
-func (agent *PrometheusCoreosOperator) Update(sp api.StatsAccessor, new *api.AgentSpec) error {
+func (agent *PrometheusCoreosOperator) CreateOrUpdate(sp api.StatsAccessor, new *api.AgentSpec) (bool, error) {
 	if !agent.SupportsCoreOSOperator() {
-		return errors.New("cluster does not support CoreOS Prometheus operator")
+		return false, errors.New("cluster does not support CoreOS Prometheus operator")
 	}
 	return agent.ensureServiceMonitor(sp, new)
 }
 
-func (agent *PrometheusCoreosOperator) Delete(sp api.StatsAccessor, spec *api.AgentSpec) error {
+func (agent *PrometheusCoreosOperator) Delete(sp api.StatsAccessor) (bool, error) {
 	if !agent.SupportsCoreOSOperator() {
-		return errors.New("cluster does not support CoreOS Prometheus operator")
+		return false, errors.New("cluster does not support CoreOS Prometheus operator")
 	}
-	if err := agent.promClient.ServiceMonitors(spec.Prometheus.Namespace).Delete(sp.ServiceMonitorName(), nil); !kerr.IsNotFound(err) {
-		return err
+
+	old, err := agent.promClient.ServiceMonitors(metav1.NamespaceAll).List(metav1.ListOptions{
+		LabelSelector: labels.Set{
+			"monitoring.appscode.com/service-key": sp.GetNamespace() + "." + sp.ServiceName(),
+		}.String(),
+	})
+	if err != nil && !kerr.IsNotFound(err) {
+		return false, err
 	}
-	return nil
+
+	ok := false
+	oldItems := old.(*prom.ServiceMonitorList)
+	for _, item := range oldItems.Items {
+		if item != nil {
+			err := agent.promClient.ServiceMonitors(item.Namespace).Delete(sp.ServiceMonitorName(), nil)
+			if err != nil && !kerr.IsNotFound(err) {
+				return false, err
+			} else if err == nil {
+				ok = true
+			}
+		}
+	}
+	return ok, nil
 }
 
 func (agent *PrometheusCoreosOperator) SupportsCoreOSOperator() bool {
@@ -61,33 +76,37 @@ func (agent *PrometheusCoreosOperator) SupportsCoreOSOperator() bool {
 	return true
 }
 
-func (agent *PrometheusCoreosOperator) ensureServiceMonitor(sp api.StatsAccessor, new *api.AgentSpec) error {
+func (agent *PrometheusCoreosOperator) ensureServiceMonitor(sp api.StatsAccessor, new *api.AgentSpec) (bool, error) {
 	old, err := agent.promClient.ServiceMonitors(metav1.NamespaceAll).List(metav1.ListOptions{
 		LabelSelector: labels.Set{
-			"name": sp.ServiceMonitorName(),
+			"monitoring.appscode.com/service-key": sp.GetNamespace() + "." + sp.ServiceName(),
 		}.String(),
 	})
 
+	ok := false
 	oldItems := old.(*prom.ServiceMonitorList)
-
 	for _, item := range oldItems.Items {
 		if item != nil && (new == nil || item.Namespace != new.Prometheus.Namespace) {
 			err := agent.promClient.ServiceMonitors(item.Namespace).Delete(sp.ServiceMonitorName(), nil)
 			if err != nil && !kerr.IsNotFound(err) {
-				return err
+				return false, err
+			} else if err == nil {
+				ok = true
 			}
 		}
 	}
-
 	if new == nil {
-		return nil
+		return ok, nil
 	}
+
+	// Unique Label Selector for ServiceMonitor
+	new.Prometheus.Labels["monitoring.appscode.com/service-key"] = sp.GetNamespace() + "." + sp.ServiceName()
 
 	actual, err := agent.promClient.ServiceMonitors(new.Prometheus.Namespace).Get(sp.ServiceMonitorName(), metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		return agent.createServiceMonitor(sp, new)
 	} else if err != nil {
-		return err
+		return ok, err
 	}
 
 	update := false
@@ -107,14 +126,10 @@ func (agent *PrometheusCoreosOperator) ensureServiceMonitor(sp api.StatsAccessor
 	if update {
 		svc, err := agent.k8sClient.CoreV1().Services(sp.GetNamespace()).Get(sp.ServiceName(), metav1.GetOptions{})
 		if err != nil {
-			return err
+			return false, err
 		}
 
-		var labels map[string]string
-		labels = new.Prometheus.Labels
-		labels["name"] = sp.ServiceMonitorName()
-
-		actual.Labels = labels
+		actual.Labels = new.Prometheus.Labels
 		actual.Spec.Selector = metav1.LabelSelector{
 			MatchLabels: svc.Labels,
 		}
@@ -125,16 +140,16 @@ func (agent *PrometheusCoreosOperator) ensureServiceMonitor(sp api.StatsAccessor
 			actual.Spec.Endpoints[i].Interval = new.Prometheus.Interval
 		}
 		_, err = agent.promClient.ServiceMonitors(new.Prometheus.Namespace).Update(actual)
-		return err
+		return update, err
 	}
 
-	return nil
+	return update, nil
 }
 
-func (agent *PrometheusCoreosOperator) createServiceMonitor(sp api.StatsAccessor, spec *api.AgentSpec) error {
+func (agent *PrometheusCoreosOperator) createServiceMonitor(sp api.StatsAccessor, spec *api.AgentSpec) (bool, error) {
 	svc, err := agent.k8sClient.CoreV1().Services(sp.GetNamespace()).Get(sp.ServiceName(), metav1.GetOptions{})
 	if err != nil {
-		return err
+		return false, err
 	}
 	var portName string
 	for _, p := range svc.Spec.Ports {
@@ -143,18 +158,14 @@ func (agent *PrometheusCoreosOperator) createServiceMonitor(sp api.StatsAccessor
 		}
 	}
 	if portName == "" {
-		return errors.New("no port found in stats service")
+		return false, errors.New("no port found in stats service")
 	}
-
-	var labels map[string]string
-	labels = spec.Prometheus.Labels
-	labels["name"] = sp.ServiceMonitorName()
 
 	sm := &prom.ServiceMonitor{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      sp.ServiceMonitorName(),
 			Namespace: spec.Prometheus.Namespace,
-			Labels:    labels,
+			Labels:    spec.Prometheus.Labels,
 		},
 		Spec: prom.ServiceMonitorSpec{
 			NamespaceSelector: prom.NamespaceSelector{
@@ -172,8 +183,8 @@ func (agent *PrometheusCoreosOperator) createServiceMonitor(sp api.StatsAccessor
 			},
 		},
 	}
-	if _, err := agent.promClient.ServiceMonitors(spec.Prometheus.Namespace).Create(sm); !kerr.IsAlreadyExists(err) {
-		return err
+	if _, err := agent.promClient.ServiceMonitors(spec.Prometheus.Namespace).Create(sm); err != nil && !kerr.IsAlreadyExists(err) {
+		return false, err
 	}
-	return nil
+	return true, nil
 }

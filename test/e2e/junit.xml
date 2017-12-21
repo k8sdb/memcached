@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="6" failures="0" time="679.489303999">
-      <testcase name="Memcached Test General - should run successfully" classname="e2e Suite" time="80.051610046"></testcase>
-      <testcase name="Memcached Test General Multiple Replica should run successfully" classname="e2e Suite" time="60.040397795"></testcase>
-      <testcase name="Memcached Test DoNotPause should work successfully" classname="e2e Suite" time="50.052088354"></testcase>
-      <testcase name="Memcached Test Resume - should resume DormantDatabase successfully" classname="e2e Suite" time="125.082473221"></testcase>
-      <testcase name="Memcached Test Resume With original Memcached should resume DormantDatabase successfully" classname="e2e Suite" time="120.076781388"></testcase>
-      <testcase name="Memcached Test Resume With original Memcached Multiple times should resume DormantDatabase successfully" classname="e2e Suite" time="240.139642808"></testcase>
+  <testsuite tests="6" failures="0" time="689.561765014">
+      <testcase name="Memcached Test General - should run successfully" classname="e2e Suite" time="85.054971765"></testcase>
+      <testcase name="Memcached Test General Multiple Replica should run successfully" classname="e2e Suite" time="65.04770337"></testcase>
+      <testcase name="Memcached Test DoNotPause should work successfully" classname="e2e Suite" time="55.070921444"></testcase>
+      <testcase name="Memcached Test Resume - should resume DormantDatabase successfully" classname="e2e Suite" time="125.09965023"></testcase>
+      <testcase name="Memcached Test Resume With original Memcached should resume DormantDatabase successfully" classname="e2e Suite" time="115.078415134"></testcase>
+      <testcase name="Memcached Test Resume With original Memcached Multiple times should resume DormantDatabase successfully" classname="e2e Suite" time="240.167065403"></testcase>
   </testsuite>

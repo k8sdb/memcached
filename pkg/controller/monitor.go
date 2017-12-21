@@ -23,28 +23,28 @@ func (c *Controller) newMonitorController(memcached *api.Memcached) (mona.Agent,
 	return nil, fmt.Errorf("monitoring controller not found for %v", monitorSpec)
 }
 
-func (c *Controller) addOrUpdateMonitor(memcached *api.Memcached) error {
+func (c *Controller) addOrUpdateMonitor(memcached *api.Memcached) (bool, error) {
 	agent, err := c.newMonitorController(memcached)
 	if err != nil {
-		return err
+		return false, err
 	}
-	return agent.Add(memcached.StatsAccessor(), memcached.Spec.Monitor)
+	return agent.CreateOrUpdate(memcached.StatsAccessor(), memcached.Spec.Monitor)
 }
 
-func (c *Controller) deleteMonitor(memcached *api.Memcached) error {
+func (c *Controller) deleteMonitor(memcached *api.Memcached) (bool, error) {
 	agent, err := c.newMonitorController(memcached)
 	if err != nil {
-		return err
+		return false, err
 	}
-	return agent.Delete(memcached.StatsAccessor(), memcached.Spec.Monitor)
+	return agent.Delete(memcached.StatsAccessor())
 }
 
-func (c *Controller) manageMonitor(memcached *api.Memcached) error {
+func (c *Controller) manageMonitor(memcached *api.Memcached) (bool, error) {
 	if memcached.Spec.Monitor != nil {
 		return c.addOrUpdateMonitor(memcached)
 	} else {
 		agent := agents.New(kapi.AgentCoreOSPrometheus, c.Client, c.ApiExtKubeClient, c.promClient)
-		return agent.Add(memcached.StatsAccessor(), memcached.Spec.Monitor)
+		return agent.CreateOrUpdate(memcached.StatsAccessor(), memcached.Spec.Monitor)
 	}
-	return nil
+	return false, nil
 }

@@ -12,14 +12,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (c *Controller) ensureService(memcached *api.Memcached) error {
+func (c *Controller) ensureService(memcached *api.Memcached) (bool, error) {
 	// Check if service name exists
 	if err := c.checkService(memcached); err != nil {
-		return err
+		return false, err
 	}
 
 	// create database Service
-	if err := c.createService(memcached); err != nil {
+	ok, err := c.createService(memcached)
+	if err != nil {
 		c.recorder.Eventf(
 			memcached.ObjectReference(),
 			core.EventTypeWarning,
@@ -27,9 +28,16 @@ func (c *Controller) ensureService(memcached *api.Memcached) error {
 			"Failed to createOrPatch Service. Reason: %v",
 			err,
 		)
-		return err
+		return false, err
+	} else if ok {
+		c.recorder.Event(
+			memcached.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessfulCreate,
+			"Successfully CreatedOrPatched Service",
+		)
 	}
-	return nil
+	return ok, nil
 }
 
 func (c *Controller) checkService(memcached *api.Memcached) error {
@@ -50,13 +58,13 @@ func (c *Controller) checkService(memcached *api.Memcached) error {
 	return nil
 }
 
-func (c *Controller) createService(memcached *api.Memcached) error {
+func (c *Controller) createService(memcached *api.Memcached) (bool, error) {
 	meta := metav1.ObjectMeta{
 		Name:      memcached.OffshootName(),
 		Namespace: memcached.Namespace,
 	}
 
-	_, _, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
+	_, ok, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
 
 		in.Labels = memcached.OffshootLabels()
 		in.Spec.Ports = upsertServicePort(in, memcached)
@@ -64,7 +72,7 @@ func (c *Controller) createService(memcached *api.Memcached) error {
 
 		return in
 	})
-	return err
+	return ok, err
 }
 
 func upsertServicePort(service *core.Service, memcached *api.Memcached) []core.ServicePort {

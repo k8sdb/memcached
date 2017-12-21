@@ -9,6 +9,7 @@ import (
 	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	"github.com/kubedb/memcached/pkg/validator"
+	"github.com/the-redback/go-oneliners"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,29 +65,33 @@ func (c *Controller) create(memcached *api.Memcached) error {
 	}
 
 	// Event for notification that kubernetes objects are creating
-	c.recorder.Event(
-		memcached.ObjectReference(),
-		core.EventTypeNormal,
-		eventer.EventReasonCreating,
-		"Updating Kubernetes objects",
-	)
+	//c.recorder.Event(
+	//	memcached.ObjectReference(),
+	//	core.EventTypeNormal,
+	//	eventer.EventReasonCreating,
+	//	"Updating Kubernetes objects",
+	//)
 
 	// ensure database Service
-	if err := c.ensureService(memcached); err != nil {
-		return err
+	ok1, er1 := c.ensureService(memcached)
+	if er1 != nil {
+		return er1
 	}
 
 	// ensure database Deployment
-	if err := c.ensureDeployment(memcached); err != nil {
-		return err
+	ok2, er2 := c.ensureDeployment(memcached)
+	if er2 != nil {
+		return er2
 	}
 
-	c.recorder.Event(
-		memcached.ObjectReference(),
-		core.EventTypeNormal,
-		eventer.EventReasonSuccessfulCreate,
-		"Successfully updated Memcached",
-	)
+	if ok1 && ok2 {
+		c.recorder.Event(
+			memcached.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessfulCreate,
+			"Successfully updated Memcached",
+		)
+	}
 
 	if ok, err := c.manageMonitor(memcached); err != nil {
 		c.recorder.Eventf(
@@ -203,6 +208,7 @@ func (c *Controller) matchDormantDatabase(memcached *api.Memcached) (bool, error
 }
 
 func (c *Controller) pause(memcached *api.Memcached) error {
+	oneliners.PrettyJson(memcached, "memcached")
 	c.recorder.Event(
 		memcached.ObjectReference(),
 		core.EventTypeNormal,

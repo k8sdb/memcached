@@ -24,9 +24,9 @@ const (
 	durationCheckDeployment = time.Minute * 30
 )
 
-func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
+func (c *Controller) ensureDeployment(memcached *api.Memcached) (bool, error) {
 	if err := c.checkDeployment(memcached); err != nil {
-		return err
+		return false, err
 	}
 
 	deploymentMeta := metav1.ObjectMeta{
@@ -42,7 +42,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
 	if c.opt.EnableRbac {
 		// Ensure ClusterRoles for database deployment
 		if err := c.ensureRBACStuff(memcached); err != nil {
-			return err
+			return false, err
 		}
 	}
 
@@ -74,7 +74,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
 	})
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// Check Deployment Pod status
@@ -86,7 +86,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
 			`Failed to CreateOrPatch Deployment. Reason: %v`,
 			err,
 		)
-		return err
+		return false, err
 	} else if ok {
 		c.recorder.Event(
 			memcached.ObjectReference(),
@@ -107,10 +107,10 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) error {
 			eventer.EventReasonFailedToUpdate,
 			err.Error(),
 		)
-		return err
+		return false, err
 	}
 	*memcached = *mg
-	return nil
+	return ok, nil
 }
 
 func (c *Controller) checkDeployment(memcached *api.Memcached) error {

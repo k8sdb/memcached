@@ -16,6 +16,16 @@ import (
 )
 
 func (c *Controller) create(memcached *api.Memcached) error {
+	if err := validator.ValidateMemcached(c.Client, memcached); err != nil {
+		c.recorder.Event(
+			memcached.ObjectReference(),
+			core.EventTypeWarning,
+			eventer.EventReasonInvalid,
+			err.Error(),
+		)
+		return nil // user error so just record error and don't retry.
+	}
+
 	if memcached.Status.CreationTime == nil {
 		mc, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
 			t := metav1.Now()
@@ -33,16 +43,6 @@ func (c *Controller) create(memcached *api.Memcached) error {
 			return err
 		}
 		memcached.Status = mc.Status
-	}
-
-	if err := validator.ValidateMemcached(c.Client, memcached); err != nil {
-		c.recorder.Event(
-			memcached.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonInvalid,
-			err.Error(),
-		)
-		return nil
 	}
 
 	// Dynamic Defaulting

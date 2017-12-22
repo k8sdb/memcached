@@ -144,7 +144,7 @@ func (c *Controller) processNextItem() bool {
 	defer c.queue.Done(key)
 
 	// Invoke the method containing the business logic
-	err := c.runMemcachedInjector(key.(string))
+	err := c.runMemcached(key.(string))
 	if err == nil {
 		// Forget about the #AddRateLimited history of the key on every successful synchronization.
 		// This ensures that future processing of updates for this key is not delayed because of
@@ -173,7 +173,7 @@ func (c *Controller) processNextItem() bool {
 	return true
 }
 
-func (c *Controller) runMemcachedInjector(key string) error {
+func (c *Controller) runMemcached(key string) error {
 	log.Debugln("started processing, key: %v", key)
 	obj, exists, err := c.indexer.GetByKey(key)
 	if err != nil {

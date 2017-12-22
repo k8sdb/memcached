@@ -10,14 +10,12 @@ import (
 	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	"github.com/kubedb/memcached/pkg/validator"
-	"github.com/the-redback/go-oneliners"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (c *Controller) create(memcached *api.Memcached) error {
-	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>.", memcached.Name)
 	if memcached.Status.CreationTime == nil {
 		mc, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
 			t := metav1.Now()
@@ -194,7 +192,6 @@ func (c *Controller) matchDormantDatabase(memcached *api.Memcached) (bool, error
 }
 
 func (c *Controller) pause(memcached *api.Memcached) error {
-	oneliners.PrettyJson(memcached, "memcached")
 	c.recorder.Event(
 		memcached.ObjectReference(),
 		core.EventTypeNormal,
@@ -210,28 +207,28 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 		}
 	}
 
-	if memcached.Spec.DoNotPause {
-		c.recorder.Eventf(
-			memcached.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToPause,
-			`Memcached "%v" is locked.`,
-			memcached.Name,
-		)
-
-		if err := c.reCreateMemcached(memcached); err != nil {
-			c.recorder.Eventf(
-				memcached.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToCreate,
-				`Failed to recreate Memcached: "%v". Reason: %v`,
-				memcached.Name,
-				err,
-			)
-			return err
-		}
-		return nil
-	}
+	//if memcached.Spec.DoNotPause {
+	//	c.recorder.Eventf(
+	//		memcached.ObjectReference(),
+	//		core.EventTypeWarning,
+	//		eventer.EventReasonFailedToPause,
+	//		`Memcached "%v" is locked.`,
+	//		memcached.Name,
+	//	)
+	//
+	//	if err := c.reCreateMemcached(memcached); err != nil {
+	//		c.recorder.Eventf(
+	//			memcached.ObjectReference(),
+	//			core.EventTypeWarning,
+	//			eventer.EventReasonFailedToCreate,
+	//			`Failed to recreate Memcached: "%v". Reason: %v`,
+	//			memcached.Name,
+	//			err,
+	//		)
+	//		return err
+	//	}
+	//	return nil
+	//}
 
 	if _, err := c.createDormantDatabase(memcached); err != nil {
 		c.recorder.Eventf(
@@ -276,20 +273,6 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 }
 
 func (c *Controller) reCreateMemcached(memcached *api.Memcached) error {
-	_memcached := &api.Memcached{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        memcached.Name,
-			Namespace:   memcached.Namespace,
-			Labels:      memcached.Labels,
-			Annotations: memcached.Annotations,
-		},
-		Spec:   memcached.Spec,
-		Status: memcached.Status,
-	}
-
-	if _, err := c.ExtClient.Memcacheds(_memcached.Namespace).Create(_memcached); err != nil {
-		return err
-	}
-
+	//reCreateMemcached Login
 	return nil
 }

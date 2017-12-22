@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"fmt"
-
 	"github.com/appscode/go/log"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -31,10 +29,7 @@ func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 		return err
 	}
 
-	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>> ", dormantDb.OffshootName(), ":::", dormantDb.Namespace)
-
-	if err := c.Client.AppsV1beta1().Deployments(dormantDb.Namespace).Delete(dormantDb.OffshootName(), nil); err != nil && !kerr.IsNotFound(err) {
-		fmt.Println(">>>>>>>>>>>>>>>>>>>> err", err)
+	if err := c.deleteDeployment(dormantDb.OffshootName(), dormantDb.Namespace); err != nil && !kerr.IsNotFound(err) {
 		log.Errorln(err)
 		return err
 	}

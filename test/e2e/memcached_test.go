@@ -82,35 +82,35 @@ var _ = Describe("Memcached", func() {
 
 		})
 
-		Context("DoNotPause", func() {
-			BeforeEach(func() {
-				memcached.Spec.DoNotPause = true
-			})
-
-			It("should work successfully", func() {
-				// Create and wait for running Memcached
-				createAndWaitForRunning()
-
-				By("Delete memcached")
-				err = f.DeleteMemcached(memcached.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Memcached is not paused. Check for memcached")
-				f.EventuallyMemcached(memcached.ObjectMeta).Should(BeTrue())
-
-				By("Check for Running memcached")
-				f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
-
-				By("Update memcached to set DoNotPause=false")
-				f.TryPatchMemcached(memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
-					in.Spec.DoNotPause = false
-					return in
-				})
-
-				// Delete test resource
-				deleteTestResource()
-			})
-		})
+		//Context("DoNotPause", func() {
+		//	BeforeEach(func() {
+		//		memcached.Spec.DoNotPause = true
+		//	})
+		//
+		//	It("should work successfully", func() {
+		//		// Create and wait for running Memcached
+		//		createAndWaitForRunning()
+		//
+		//		By("Delete memcached")
+		//		err = f.DeleteMemcached(memcached.ObjectMeta)
+		//		Expect(err).NotTo(HaveOccurred())
+		//
+		//		By("Memcached is not paused. Check for memcached")
+		//		f.EventuallyMemcached(memcached.ObjectMeta).Should(BeTrue())
+		//
+		//		By("Check for Running memcached")
+		//		f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
+		//
+		//		By("Update memcached to set DoNotPause=false")
+		//		f.TryPatchMemcached(memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
+		//			in.Spec.DoNotPause = false
+		//			return in
+		//		})
+		//
+		//		// Delete test resource
+		//		deleteTestResource()
+		//	})
+		//})
 
 		Context("Resume", func() {
 			var usedInitSpec bool

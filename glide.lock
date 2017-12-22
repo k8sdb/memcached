@@ -1,5 +1,5 @@
-hash: 2b2429b3e6ef017283435aedbb5735d8bca7ef6cc720bc8194cc1b3db97984ad
-updated: 2017-12-22T16:04:17.172268834+06:00
+hash: 84d4f9de2bb5efcf66f31de32ab5f7c6e952f82048cd54100181daeb27b2712c
+updated: 2017-12-22T18:28:37.312501382+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -28,7 +28,7 @@ imports:
   - agents/prometheusbuiltin
   - api
 - name: github.com/appscode/kutil
-  version: 04124fd21c654188d7a11908d8c8af994a4cccef
+  version: f784d214c1ad888458cb663c56c329cc5bd2f035
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
@@ -314,8 +314,6 @@ imports:
   - doc
 - name: github.com/spf13/pflag
   version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
-- name: github.com/the-redback/go-oneliners
-  version: bcec1af62911e852baddf07214f883258c2c179e
 - name: golang.org/x/crypto
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:

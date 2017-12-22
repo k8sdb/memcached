@@ -18,7 +18,6 @@ func (c *Controller) ensureService(memcached *api.Memcached) (kutil.VerbType, er
 	if err := c.checkService(memcached); err != nil {
 		return kutil.VerbUnchanged, err
 	}
-
 	// create database Service
 	ok, err := c.createService(memcached)
 	if err != nil {
@@ -58,11 +57,9 @@ func (c *Controller) checkService(memcached *api.Memcached) error {
 			return err
 		}
 	}
-
 	if service.Spec.Selector[api.LabelDatabaseName] != name {
 		return fmt.Errorf(`intended service "%v" already exists`, name)
 	}
-
 	return nil
 }
 
@@ -73,11 +70,9 @@ func (c *Controller) createService(memcached *api.Memcached) (kutil.VerbType, er
 	}
 
 	_, ok, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
-
 		in.Labels = memcached.OffshootLabels()
 		in.Spec.Ports = upsertServicePort(in, memcached)
 		in.Spec.Selector = memcached.OffshootLabels()
-
 		return in
 	})
 	return ok, err
@@ -92,7 +87,6 @@ func upsertServicePort(service *core.Service, memcached *api.Memcached) []core.S
 			TargetPort: intstr.FromString("db"),
 		},
 	}
-
 	if memcached.Spec.Monitor != nil &&
 		memcached.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
 		memcached.Spec.Monitor.Prometheus != nil {

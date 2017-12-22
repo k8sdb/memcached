@@ -70,14 +70,12 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 		if c.opt.EnableRbac {
 			in.Spec.Template.Spec.ServiceAccountName = memcached.Name
 		}
-
 		return in
 	})
 
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
-
 	// Check Deployment Pod status
 	if err := app_util.WaitUntilDeploymentReady(c.Client, deploymentMeta); err != nil {
 		c.recorder.Eventf(
@@ -103,7 +101,6 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 			"Successfully patched Deployment",
 		)
 	}
-
 	mg, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
 		in.Status.Phase = api.DatabasePhaseRunning
 		return in
@@ -117,7 +114,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 		)
 		return kutil.VerbUnchanged, err
 	}
-	*memcached = *mg
+	memcached.Status = mg.Status
 	return ok, nil
 }
 
@@ -132,11 +129,9 @@ func (c *Controller) checkDeployment(memcached *api.Memcached) error {
 			return err
 		}
 	}
-
 	if deployment.Labels[api.LabelDatabaseKind] != api.ResourceKindMemcached || deployment.Labels[api.LabelDatabaseName] != dbName {
 		return fmt.Errorf(`intended deployment "%v" already exists`, dbName)
 	}
-
 	return nil
 }
 
@@ -170,7 +165,6 @@ func upsertDeploymentPort(deployment *apps.Deployment) *apps.Deployment {
 		}
 		return portList
 	}
-
 	for i, container := range deployment.Spec.Template.Spec.Containers {
 		if container.Name == api.ResourceNameMemcached {
 			deployment.Spec.Template.Spec.Containers[i].Ports = getPorts()
@@ -218,17 +212,14 @@ func (c *Controller) deleteDeployment(name, namespace string) error {
 			return err
 		}
 	}
-
 	deletePolicy := metav1.DeletePropagationForeground
 	if err := c.Client.AppsV1beta1().Deployments(deployment.Namespace).Delete(deployment.Name, &metav1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}); err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
-
 	if err := core_util.WaitUntilPodDeletedBySelector(c.Client, namespace, deployment.Spec.Selector); err != nil {
 		return err
 	}
-
 	return nil
 }

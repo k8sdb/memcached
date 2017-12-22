@@ -45,9 +45,14 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		return nil
 	}
 
+	// Dynamic Defaulting
 	// Assign Default Monitoring Port
 	if err := c.setMonitoringPort(memcached); err != nil {
 		return err
+	}
+	// set replica to at least 1
+	if memcached.Spec.Replicas < 1 {
+		memcached.Spec.Replicas = 1
 	}
 
 	// Check DormantDatabase

@@ -42,7 +42,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 		}
 	}
 
-	_, ok, err := app_util.CreateOrPatchDeployment(c.Client, deploymentMeta, func(in *apps.Deployment) *apps.Deployment {
+	_, vt, err := app_util.CreateOrPatchDeployment(c.Client, deploymentMeta, func(in *apps.Deployment) *apps.Deployment {
 		in.Labels = core_util.UpsertMap(in.Labels, memcached.DeploymentLabels())
 		in.Annotations = core_util.UpsertMap(in.Annotations, memcached.DeploymentAnnotations())
 
@@ -111,19 +111,13 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 			err,
 		)
 		return kutil.VerbUnchanged, err
-	} else if ok == kutil.VerbCreated {
-		c.recorder.Event(
+	} else if vt != kutil.VerbUnchanged {
+		c.recorder.Eventf(
 			memcached.ObjectReference(),
 			core.EventTypeNormal,
 			eventer.EventReasonSuccessful,
-			"Successfully created Deployment",
-		)
-	} else if ok == kutil.VerbPatched {
-		c.recorder.Event(
-			memcached.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessful,
-			"Successfully patched Deployment",
+			"Successfully %v Deployment",
+			vt,
 		)
 	}
 	mg, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
@@ -140,7 +134,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 		return kutil.VerbUnchanged, err
 	}
 	memcached.Status = mg.Status
-	return ok, nil
+	return vt, nil
 }
 
 func (c *Controller) checkDeployment(memcached *api.Memcached) error {

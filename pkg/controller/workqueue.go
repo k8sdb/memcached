@@ -183,13 +183,6 @@ func (c *Controller) runMemcachedInjector(key string) error {
 
 	if !exists {
 		log.Debugf("Memcached %s does not exist anymore\n", key)
-		//if obj, exists, err = c.deletedIndexer.GetByKey(key); err == nil && exists {
-		//	memcached := obj.(*api.Memcached)
-		//	if err := c.pause(memcached.DeepCopy()); err != nil {
-		//		log.Errorln(err)
-		//	}
-		//	c.deletedIndexer.Delete(key)
-		//}
 	} else {
 		// Note that you also have to check the uid if you have a local controlled resource, which
 		// is dependent on the actual instance, to detect that a Memcached was recreated with the same name
@@ -198,6 +191,7 @@ func (c *Controller) runMemcachedInjector(key string) error {
 			if core_util.HasFinalizer(memcached.ObjectMeta, "kubedb.com") {
 				if err := c.pause(memcached); err != nil {
 					log.Errorln(err)
+					return err
 				}
 				memcached, _, err = util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
 					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, "kubedb.com")

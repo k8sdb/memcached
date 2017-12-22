@@ -102,6 +102,5 @@ func (c *Controller) createDormantDatabase(memcached *api.Memcached) (*api.Dorma
 			},
 		},
 	}
-
 	return c.ExtClient.DormantDatabases(dormantDb.Namespace).Create(dormantDb)
 }

@@ -13,7 +13,7 @@ import:
   version: client-go-5
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/kubedb/apimachinery
-  version: patch-event
+  version: master
 - package: github.com/prometheus/client_golang
   version: v0.8.0
 - package: github.com/prometheus/common

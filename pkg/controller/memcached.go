@@ -55,14 +55,6 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		return err
 	}
 
-	// Event for notification that kubernetes objects are creating
-	//c.recorder.Event(
-	//	memcached.ObjectReference(),
-	//	core.EventTypeNormal,
-	//	eventer.EventReasonCreating,
-	//	"Updating Kubernetes objects",
-	//)
-
 	// ensure database Service
 	ok1, er1 := c.ensureService(memcached)
 	if er1 != nil {

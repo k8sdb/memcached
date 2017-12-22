@@ -264,7 +264,7 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 	return nil
 }
 
-func (c *Controller) reCreateMemcached(memcached *api.Memcached) error {
-	//reCreateMemcached Login
-	return nil
-}
+//func (c *Controller) reCreateMemcached(memcached *api.Memcached) error {
+//	//reCreateMemcached
+//	return nil
+//}

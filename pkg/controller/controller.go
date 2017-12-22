@@ -56,14 +56,12 @@ type Controller struct {
 	syncPeriod time.Duration
 
 	// Workqueue
-	indexer        cache.Indexer
-	queue          workqueue.RateLimitingInterface
-	informer       cache.Controller
-	deletedIndexer cache.Indexer
+	indexer  cache.Indexer
+	queue    workqueue.RateLimitingInterface
+	informer cache.Controller
 }
 
 var _ amc.Deleter = &Controller{}
-var keyExists map[string]bool
 
 func New(
 	client kubernetes.Interface,

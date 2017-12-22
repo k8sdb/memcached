@@ -3,10 +3,12 @@ package controller
 import (
 	"fmt"
 
-	"github.com/appscode/kutil/tools/monitoring/agents"
-	kapi "github.com/appscode/kutil/tools/monitoring/api"
-	mona "github.com/appscode/kutil/tools/monitoring/api"
+	"github.com/appscode/kube-mon/agents"
+	mona "github.com/appscode/kube-mon/api"
+	"github.com/appscode/kutil"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	"github.com/kubedb/apimachinery/pkg/eventer"
+	core "k8s.io/api/core/v1"
 )
 
 func (c *Controller) newMonitorController(memcached *api.Memcached) (mona.Agent, error) {
@@ -23,28 +25,60 @@ func (c *Controller) newMonitorController(memcached *api.Memcached) (mona.Agent,
 	return nil, fmt.Errorf("monitoring controller not found for %v", monitorSpec)
 }
 
-func (c *Controller) addOrUpdateMonitor(memcached *api.Memcached) (bool, error) {
+func (c *Controller) addOrUpdateMonitor(memcached *api.Memcached) (kutil.VerbType, error) {
 	agent, err := c.newMonitorController(memcached)
 	if err != nil {
-		return false, err
+		return kutil.VerbUnchanged, err
 	}
 	return agent.CreateOrUpdate(memcached.StatsAccessor(), memcached.Spec.Monitor)
 }
 
-func (c *Controller) deleteMonitor(memcached *api.Memcached) (bool, error) {
+func (c *Controller) deleteMonitor(memcached *api.Memcached) (kutil.VerbType, error) {
 	agent, err := c.newMonitorController(memcached)
 	if err != nil {
-		return false, err
+		return kutil.VerbUnchanged, err
 	}
 	return agent.Delete(memcached.StatsAccessor())
 }
 
-func (c *Controller) manageMonitor(memcached *api.Memcached) (bool, error) {
+// todo: needs to set on status
+func (c *Controller) manageMonitor(memcached *api.Memcached) error {
+	ok := kutil.VerbUnchanged
 	if memcached.Spec.Monitor != nil {
-		return c.addOrUpdateMonitor(memcached)
+		ok1, err := c.addOrUpdateMonitor(memcached)
+		if err != nil {
+			return err
+		}
+		ok = ok1
 	} else {
-		agent := agents.New(kapi.AgentCoreOSPrometheus, c.Client, c.ApiExtKubeClient, c.promClient)
-		return agent.CreateOrUpdate(memcached.StatsAccessor(), memcached.Spec.Monitor)
+		agent := agents.New(mona.AgentCoreOSPrometheus, c.Client, c.ApiExtKubeClient, c.promClient)
+		ok1, err := agent.CreateOrUpdate(memcached.StatsAccessor(), memcached.Spec.Monitor)
+		if err != nil {
+			return err
+		}
+		ok = ok1
 	}
-	return false, nil
+	if ok == kutil.VerbCreated {
+		c.recorder.Event(
+			memcached.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessfulMonitorAdd,
+			"Successfully added monitoring system.",
+		)
+	} else if ok == kutil.VerbUpdated {
+		c.recorder.Event(
+			memcached.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessfulMonitorUpdate,
+			"Successfully updated monitoring system.",
+		)
+	} else if ok == kutil.VerbDeleted {
+		c.recorder.Event(
+			memcached.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessfulMonitorDelete,
+			"Successfully deleted monitoring system.",
+		)
+	}
+	return nil
 }

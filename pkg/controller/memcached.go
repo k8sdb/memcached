@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/appscode/go/log"
+	"github.com/appscode/kutil"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	"github.com/kubedb/apimachinery/pkg/eventer"
@@ -16,14 +17,14 @@ import (
 )
 
 func (c *Controller) create(memcached *api.Memcached) error {
+	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>.", memcached.Name)
 	if memcached.Status.CreationTime == nil {
-		mc, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
+		mc, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
 			t := metav1.Now()
 			in.Status.CreationTime = &t
 			in.Status.Phase = api.DatabasePhaseCreating
 			return in
 		})
-
 		if err != nil {
 			c.recorder.Eventf(
 				memcached.ObjectReference(),
@@ -36,11 +37,6 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		memcached.Status = mc.Status
 	}
 
-	// Assign Default Monitoring Port
-	if err := c.setMonitoringPort(memcached); err != nil {
-		return err
-	}
-
 	if err := validator.ValidateMemcached(c.Client, memcached); err != nil {
 		c.recorder.Event(
 			memcached.ObjectReference(),
@@ -48,16 +44,13 @@ func (c *Controller) create(memcached *api.Memcached) error {
 			eventer.EventReasonInvalid,
 			err.Error(),
 		)
-		return err
+		return nil
 	}
 
-	// Event for successful validation
-	c.recorder.Event(
-		memcached.ObjectReference(),
-		core.EventTypeNormal,
-		eventer.EventReasonSuccessfulValidate,
-		"Successfully validate Memcached",
-	)
+	// Assign Default Monitoring Port
+	if err := c.setMonitoringPort(memcached); err != nil {
+		return err
+	}
 
 	// Check DormantDatabase
 	if matched, err := c.matchDormantDatabase(memcached); err != nil || matched {
@@ -84,16 +77,23 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		return er2
 	}
 
-	if ok1 && ok2 {
+	if ok1 == kutil.VerbCreated && ok2 == kutil.VerbCreated {
 		c.recorder.Event(
 			memcached.ObjectReference(),
 			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulCreate,
-			"Successfully updated Memcached",
+			eventer.EventReasonSuccessful,
+			"Successfully created Memcached",
+		)
+	} else if ok1 == kutil.VerbPatched || ok2 == kutil.VerbPatched {
+		c.recorder.Event(
+			memcached.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessful,
+			"Successfully patched Memcached",
 		)
 	}
 
-	if ok, err := c.manageMonitor(memcached); err != nil {
+	if err := c.manageMonitor(memcached); err != nil {
 		c.recorder.Eventf(
 			memcached.ObjectReference(),
 			core.EventTypeWarning,
@@ -103,20 +103,6 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		)
 		log.Errorln(err)
 		return nil
-	} else if memcached.Spec.Monitor != nil && ok {
-		c.recorder.Event(
-			memcached.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulCreate,
-			"Successfully updated monitoring system.",
-		)
-	} else if ok {
-		c.recorder.Event(
-			memcached.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulCreate,
-			"Successfully deleted monitoring system.",
-		)
 	}
 	return nil
 }
@@ -125,7 +111,7 @@ func (c *Controller) setMonitoringPort(memcached *api.Memcached) error {
 	if memcached.Spec.Monitor != nil &&
 		memcached.Spec.Monitor.Prometheus != nil {
 		if memcached.Spec.Monitor.Prometheus.Port == 0 {
-			mc, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
+			mc, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
 				in.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
 				return in
 			})
@@ -191,7 +177,7 @@ func (c *Controller) matchDormantDatabase(memcached *api.Memcached) (bool, error
 		return sendEvent(`failed to resume Memcached "%v" from DormantDatabase "%v". Error: %v`, memcached.Name, memcached.Name, err)
 	}
 
-	_, err = util.PatchDormantDatabase(c.ExtClient, dormantDb, func(in *api.DormantDatabase) *api.DormantDatabase {
+	_, _, err = util.PatchDormantDatabase(c.ExtClient, dormantDb, func(in *api.DormantDatabase) *api.DormantDatabase {
 		in.Spec.Resume = true
 		return in
 	})
@@ -277,7 +263,7 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 			)
 			log.Errorln(err)
 			return nil
-		} else if ok {
+		} else if ok == kutil.VerbDeleted {
 			c.recorder.Event(
 				memcached.ObjectReference(),
 				core.EventTypeNormal,

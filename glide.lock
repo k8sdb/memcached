@@ -1,5 +1,5 @@
-hash: 1b560f8c87eff0342859014c95dac53ccdd019c1a4b6695e8eb6363383f5adfb
-updated: 2017-12-21T17:14:16.018376621+06:00
+hash: 2b2429b3e6ef017283435aedbb5735d8bca7ef6cc720bc8194cc1b3db97984ad
+updated: 2017-12-22T16:04:17.172268834+06:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -20,18 +20,21 @@ imports:
   - types
   - version
   - wait
+- name: github.com/appscode/kube-mon
+  version: dd6884c63ee4615ca9ecdb7f0ca3e35c975bcca3
+  subpackages:
+  - agents
+  - agents/coreosprometheusoperator
+  - agents/prometheusbuiltin
+  - api
 - name: github.com/appscode/kutil
-  version: 8dd277dd164d4864289783db7be581740ad4dc45
+  version: 04124fd21c654188d7a11908d8c8af994a4cccef
   subpackages:
   - apiextensions/v1beta1
   - apps/v1beta1
   - core/v1
   - meta
   - rbac/v1beta1
-  - tools/monitoring/agents
-  - tools/monitoring/agents/coreosprometheusoperator
-  - tools/monitoring/agents/prometheusbuiltin
-  - tools/monitoring/api
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
 - name: github.com/appscode/osm
@@ -155,6 +158,13 @@ imports:
   - ptypes/timestamp
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
+- name: github.com/google/go-cmp
+  version: 97a1ff3c48253a51c601f6e4420181273b6ca0ea
+  subpackages:
+  - cmp
+  - cmp/internal/diff
+  - cmp/internal/function
+  - cmp/internal/value
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/google/uuid
@@ -210,7 +220,7 @@ imports:
 - name: github.com/juju/ratelimit
   version: 5b9ff866471762aa2ab2dced63c9fb6f53921342
 - name: github.com/kubedb/apimachinery
-  version: f1cf5bc311a0872b79cef06b9a30e3cafd71a0f3
+  version: 6f0713469b27d8960075ea5c3cd3338bbb90941b
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -304,6 +314,8 @@ imports:
   - doc
 - name: github.com/spf13/pflag
   version: 4c012f6dcd9546820e378d0bdda4d8fc772cdfea
+- name: github.com/the-redback/go-oneliners
+  version: bcec1af62911e852baddf07214f883258c2c179e
 - name: golang.org/x/crypto
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:
@@ -363,7 +375,7 @@ imports:
   - unicode/norm
   - width
 - name: google.golang.org/api
-  version: c0dae069ee96c9261a04c81efd9e0f1e55f565ac
+  version: 905d2b6c9443c02c46229c39d60442903a68c229
   subpackages:
   - gensupport
   - googleapi

@@ -1,8 +1,11 @@
 package: github.com/kubedb/memcached
 import:
 - package: github.com/appscode/go
+- package: github.com/google/go-cmp
 - package: github.com/appscode/kutil
-  version: updMonitor
+  version: release-5.0
+- package: github.com/appscode/kube-mon
+  version: master
 - package: github.com/appscode/pat
 - package: github.com/coreos/prometheus-operator
   repo: https://github.com/appscode/prometheus-operator.git
@@ -10,7 +13,7 @@ import:
   version: client-go-5
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/kubedb/apimachinery
-  version: dPatch
+  version: patch-event
 - package: github.com/prometheus/client_golang
   version: v0.8.0
 - package: github.com/prometheus/common

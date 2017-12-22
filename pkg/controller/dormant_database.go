@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"fmt"
+
 	"github.com/appscode/go/log"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -8,13 +10,17 @@ import (
 )
 
 func (c *Controller) Exists(om *metav1.ObjectMeta) (bool, error) {
-	if _, err := c.ExtClient.Memcacheds(om.Namespace).Get(om.Name, metav1.GetOptions{}); err != nil {
+	memcached, err := c.ExtClient.Memcacheds(om.Namespace).Get(om.Name, metav1.GetOptions{})
+	if err != nil {
 		if !kerr.IsNotFound(err) {
 			return false, err
 		}
 		return false, nil
 	}
 
+	if memcached.DeletionTimestamp != nil {
+		return false, nil
+	}
 	return true, nil
 }
 
@@ -25,7 +31,10 @@ func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 		return err
 	}
 
-	if err := c.DeleteDeployment(dormantDb.OffshootName(), dormantDb.Namespace); err != nil {
+	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>> ", dormantDb.OffshootName(), ":::", dormantDb.Namespace)
+
+	if err := c.Client.AppsV1beta1().Deployments(dormantDb.Namespace).Delete(dormantDb.OffshootName(), nil); err != nil && !kerr.IsNotFound(err) {
+		fmt.Println(">>>>>>>>>>>>>>>>>>>> err", err)
 		log.Errorln(err)
 		return err
 	}

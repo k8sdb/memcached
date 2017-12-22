@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 
+	"github.com/appscode/kutil"
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/pkg/eventer"
@@ -12,10 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func (c *Controller) ensureService(memcached *api.Memcached) (bool, error) {
+func (c *Controller) ensureService(memcached *api.Memcached) (kutil.VerbType, error) {
 	// Check if service name exists
 	if err := c.checkService(memcached); err != nil {
-		return false, err
+		return kutil.VerbUnchanged, err
 	}
 
 	// create database Service
@@ -28,13 +29,20 @@ func (c *Controller) ensureService(memcached *api.Memcached) (bool, error) {
 			"Failed to createOrPatch Service. Reason: %v",
 			err,
 		)
-		return false, err
-	} else if ok {
+		return kutil.VerbUnchanged, err
+	} else if ok == kutil.VerbCreated {
 		c.recorder.Event(
 			memcached.ObjectReference(),
 			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulCreate,
-			"Successfully CreatedOrPatched Service",
+			eventer.EventReasonSuccessful,
+			"Successfully created Service",
+		)
+	} else if ok == kutil.VerbPatched {
+		c.recorder.Event(
+			memcached.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessful,
+			"Successfully patched Service",
 		)
 	}
 	return ok, nil
@@ -58,7 +66,7 @@ func (c *Controller) checkService(memcached *api.Memcached) error {
 	return nil
 }
 
-func (c *Controller) createService(memcached *api.Memcached) (bool, error) {
+func (c *Controller) createService(memcached *api.Memcached) (kutil.VerbType, error) {
 	meta := metav1.ObjectMeta{
 		Name:      memcached.OffshootName(),
 		Namespace: memcached.Namespace,

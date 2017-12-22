@@ -2,11 +2,14 @@ package controller
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/appscode/go/log"
+	core_util "github.com/appscode/kutil/core/v1"
+	"github.com/google/go-cmp/cmp"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -29,11 +32,6 @@ func (c *Controller) initWatcher() {
 	// create the workqueue
 	c.queue = workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "memcached")
 
-	// stored deleted objects
-	c.deletedIndexer = cache.NewIndexer(cache.DeletionHandlingMetaNamespaceKeyFunc, cache.Indexers{})
-
-	keyExists = make(map[string]bool)
-
 	// Bind the workqueue to a cache with the help of an informer. This way we make sure that
 	// whenever the cache is updated, the Memcached key is added to the workqueue.
 	// Note that when we finally process the item from the workqueue, we might see a newer version
@@ -41,12 +39,8 @@ func (c *Controller) initWatcher() {
 	c.indexer, c.informer = cache.NewIndexerInformer(lw, &api.Memcached{}, c.syncPeriod, cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
 			key, err := cache.MetaNamespaceKeyFunc(obj)
-			if exists, _ := keyExists[key]; err == nil && !exists {
+			if err == nil {
 				c.queue.Add(key)
-				c.deletedIndexer.Delete(obj)
-				keyExists[key] = true
-			} else if exists {
-				log.Debugf("Key:", key, "already processing. Not added new key")
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
@@ -54,7 +48,6 @@ func (c *Controller) initWatcher() {
 			// key function.
 			key, err := cache.DeletionHandlingMetaNamespaceKeyFunc(obj)
 			if err == nil {
-				c.deletedIndexer.Add(obj)
 				c.queue.Add(key)
 			}
 		},
@@ -69,17 +62,47 @@ func (c *Controller) initWatcher() {
 				log.Errorln("Invalid Memcached object")
 				return
 			}
-			if !reflect.DeepEqual(oldObj.Spec, newObj.Spec) {
+			if newObj.DeletionTimestamp != nil || !MemcachedEqual(oldObj, newObj) {
 				key, err := cache.MetaNamespaceKeyFunc(new)
-				if exists, _ := keyExists[key]; err == nil && !exists {
+				if err == nil {
 					c.queue.Add(key)
-					keyExists[key] = true
-				} else if exists {
-					log.Debugf("Key:", key, "already processing. Not added updated key")
 				}
 			}
 		},
 	}, cache.Indexers{})
+}
+
+func MemcachedEqual(old, new *api.Memcached) bool {
+	var oldSpec, newSpec *api.MemcachedSpec
+	if old != nil {
+		oldSpec = &old.Spec
+	}
+	if new != nil {
+		newSpec = &new.Spec
+	}
+	if !cmp.Equal(oldSpec, newSpec, cmp.Comparer(func(x, y resource.Quantity) bool {
+		return x.Cmp(y) == 0
+	})) {
+		diff := cmp.Diff(oldSpec, newSpec,
+			cmp.Comparer(func(x, y resource.Quantity) bool {
+				return x.Cmp(y) == 0
+			}),
+			cmp.Comparer(func(x, y *metav1.Time) bool {
+				if x == nil && y == nil {
+					return true
+				}
+				if x != nil && y != nil {
+					return x.Time.Equal(y.Time)
+				}
+				return false
+			}))
+		log.Debugln("Memcached %s@%s has changed. Diff: %s", new.Name, new.Namespace, diff)
+		if diff != "" {
+			return false
+		}
+		return true
+	}
+	return true
 }
 
 func (c *Controller) runWatcher(threadiness int, stopCh chan struct{}) {
@@ -130,8 +153,7 @@ func (c *Controller) processNextItem() bool {
 		// This ensures that future processing of updates for this key is not delayed because of
 		// an outdated error history.
 		c.queue.Forget(key)
-		log.Debugf("Setting keyExists to false.")
-		keyExists[key.(string)] = false
+		log.Debugln("Finished Processing key: %v", key)
 		return true
 	}
 	log.Errorf("Failed to process Memcached %v. Reason: %s", key, err)
@@ -147,8 +169,7 @@ func (c *Controller) processNextItem() bool {
 	}
 
 	c.queue.Forget(key)
-	log.Debugf("Setting keyExists to false.")
-	keyExists[key.(string)] = false
+	log.Debugln("Finished Processing key: %v", key)
 	// Report to an external entity that, even after several retries, we could not successfully process this key
 	runtime.HandleError(err)
 	log.Infof("Dropping deployment %q out of the queue: %v", key, err)
@@ -156,6 +177,7 @@ func (c *Controller) processNextItem() bool {
 }
 
 func (c *Controller) runMemcachedInjector(key string) error {
+	log.Debugln("started processing, key: %v", key)
 	obj, exists, err := c.indexer.GetByKey(key)
 	if err != nil {
 		log.Errorf("Fetching object with key %s from store failed with %v", key, err)
@@ -163,20 +185,39 @@ func (c *Controller) runMemcachedInjector(key string) error {
 	}
 
 	if !exists {
-		if obj, exists, err = c.deletedIndexer.GetByKey(key); err == nil && exists {
-			memcached := obj.(*api.Memcached)
-			if err := c.pause(memcached.DeepCopy()); err != nil {
-				log.Errorln(err)
-			}
-			c.deletedIndexer.Delete(key)
-		}
+		log.Debugf("Memcached %s does not exist anymore\n", key)
+		//if obj, exists, err = c.deletedIndexer.GetByKey(key); err == nil && exists {
+		//	memcached := obj.(*api.Memcached)
+		//	if err := c.pause(memcached.DeepCopy()); err != nil {
+		//		log.Errorln(err)
+		//	}
+		//	c.deletedIndexer.Delete(key)
+		//}
 	} else {
 		// Note that you also have to check the uid if you have a local controlled resource, which
 		// is dependent on the actual instance, to detect that a Memcached was recreated with the same name
 		memcached := obj.(*api.Memcached)
-		if err := c.create(memcached.DeepCopy()); err != nil {
-			log.Errorln(err)
-			c.pushFailureEvent(memcached, err.Error())
+		if memcached.DeletionTimestamp != nil {
+			if core_util.HasFinalizer(memcached.ObjectMeta, "kubedb.com") {
+				if err := c.pause(memcached.DeepCopy()); err != nil {
+					log.Errorln(err)
+				}
+				memcached, _, err = util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
+					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, "kubedb.com")
+					return in
+				})
+				return err
+			}
+		} else {
+			memcached, _, err = util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
+				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, "kubedb.com")
+				return in
+			})
+			if err := c.create(memcached.DeepCopy()); err != nil {
+				log.Errorln(err)
+				c.pushFailureEvent(memcached, err.Error())
+				return err
+			}
 		}
 	}
 	return nil

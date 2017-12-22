@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/appscode/go/types"
+	"github.com/appscode/kutil"
 	app_util "github.com/appscode/kutil/apps/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
@@ -24,9 +25,9 @@ const (
 	durationCheckDeployment = time.Minute * 30
 )
 
-func (c *Controller) ensureDeployment(memcached *api.Memcached) (bool, error) {
+func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType, error) {
 	if err := c.checkDeployment(memcached); err != nil {
-		return false, err
+		return kutil.VerbUnchanged, err
 	}
 
 	deploymentMeta := metav1.ObjectMeta{
@@ -42,11 +43,11 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (bool, error) {
 	if c.opt.EnableRbac {
 		// Ensure ClusterRoles for database deployment
 		if err := c.ensureRBACStuff(memcached); err != nil {
-			return false, err
+			return kutil.VerbUnchanged, err
 		}
 	}
 
-	deployment, ok, err := app_util.CreateOrPatchDeployment(c.Client, deploymentMeta, func(in *apps.Deployment) *apps.Deployment {
+	_, ok, err := app_util.CreateOrPatchDeployment(c.Client, deploymentMeta, func(in *apps.Deployment) *apps.Deployment {
 		in = upsertObjectMeta(in, memcached)
 
 		in.Spec.Replicas = types.Int32P(replicas)
@@ -74,11 +75,11 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (bool, error) {
 	})
 
 	if err != nil {
-		return false, err
+		return kutil.VerbUnchanged, err
 	}
 
 	// Check Deployment Pod status
-	if err := c.CheckDeploymentPodStatus(deployment, durationCheckDeployment); err != nil {
+	if err := app_util.WaitUntilDeploymentReady(c.Client, deploymentMeta); err != nil {
 		c.recorder.Eventf(
 			memcached.ObjectReference(),
 			core.EventTypeWarning,
@@ -86,17 +87,24 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (bool, error) {
 			`Failed to CreateOrPatch Deployment. Reason: %v`,
 			err,
 		)
-		return false, err
-	} else if ok {
+		return kutil.VerbUnchanged, err
+	} else if ok == kutil.VerbCreated {
 		c.recorder.Event(
 			memcached.ObjectReference(),
 			core.EventTypeNormal,
-			eventer.EventReasonSuccessfulCreate,
-			"Successfully CreatedOrPatched Deployment",
+			eventer.EventReasonSuccessful,
+			"Successfully created Deployment",
+		)
+	} else if ok == kutil.VerbPatched {
+		c.recorder.Event(
+			memcached.ObjectReference(),
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessful,
+			"Successfully patched Deployment",
 		)
 	}
 
-	mg, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
+	mg, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
 		in.Status.Phase = api.DatabasePhaseRunning
 		return in
 	})
@@ -107,7 +115,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (bool, error) {
 			eventer.EventReasonFailedToUpdate,
 			err.Error(),
 		)
-		return false, err
+		return kutil.VerbUnchanged, err
 	}
 	*memcached = *mg
 	return ok, nil

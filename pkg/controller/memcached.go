@@ -189,21 +189,6 @@ func (c *Controller) matchDormantDatabase(memcached *api.Memcached) (bool, error
 }
 
 func (c *Controller) pause(memcached *api.Memcached) error {
-	c.recorder.Event(
-		memcached.ObjectReference(),
-		core.EventTypeNormal,
-		eventer.EventReasonPausing,
-		"Pausing Memcached",
-	)
-
-	// Assign default monitoring port
-	if memcached.Spec.Monitor != nil &&
-		memcached.Spec.Monitor.Prometheus != nil {
-		if memcached.Spec.Monitor.Prometheus.Port == 0 {
-			memcached.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
-		}
-	}
-
 	//if memcached.Spec.DoNotPause {
 	//	c.recorder.Eventf(
 	//		memcached.ObjectReference(),
@@ -247,7 +232,7 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 	)
 
 	if memcached.Spec.Monitor != nil {
-		if ok, err := c.deleteMonitor(memcached); err != nil {
+		if vt, err := c.deleteMonitor(memcached); err != nil {
 			c.recorder.Eventf(
 				memcached.ObjectReference(),
 				core.EventTypeWarning,
@@ -257,12 +242,13 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 			)
 			log.Errorln(err)
 			return nil
-		} else if ok == kutil.VerbDeleted {
-			c.recorder.Event(
+		} else if vt != kutil.VerbUnchanged {
+			c.recorder.Eventf(
 				memcached.ObjectReference(),
 				core.EventTypeNormal,
 				eventer.EventReasonSuccessfulMonitorDelete,
-				"Successfully deleted monitoring system.",
+				"Successfully %s monitoring system.",
+				vt,
 			)
 		}
 	}

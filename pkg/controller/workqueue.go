@@ -80,33 +80,30 @@ func MemcachedEqual(old, new *api.Memcached) bool {
 	if new != nil {
 		newSpec = &new.Spec
 	}
-	if !cmp.Equal(oldSpec, newSpec, cmp.Comparer(func(x, y resource.Quantity) bool {
-		return x.Cmp(y) == 0
-	})) {
-		diff := cmp.Diff(oldSpec, newSpec,
-			cmp.Comparer(func(x, y resource.Quantity) bool {
-				return x.Cmp(y) == 0
-			}),
-			cmp.Comparer(func(x, y *metav1.Time) bool {
-				if x == nil && y == nil {
-					return true
-				}
-				if x != nil && y != nil {
-					return x.Time.Equal(y.Time)
-				}
-				return false
-			}))
-		log.Debugln("Memcached %s@%s has changed. Diff: %s", new.Name, new.Namespace, diff)
-		if diff != "" {
+
+	opts := []cmp.Option{
+		cmp.Comparer(func(x, y resource.Quantity) bool {
+			return x.Cmp(y) == 0
+		}),
+		cmp.Comparer(func(x, y *metav1.Time) bool {
+			if x == nil && y == nil {
+				return true
+			}
+			if x != nil && y != nil {
+				return x.Time.Equal(y.Time)
+			}
 			return false
-		}
-		return true
+		}),
+	}
+	if !cmp.Equal(oldSpec, newSpec, opts...) {
+		diff := cmp.Diff(oldSpec, newSpec, opts...)
+		log.Infoln("Memcached %s/%s has changed. Diff: %s", new.Namespace, new.Name, diff)
+		return false
 	}
 	return true
 }
 
 func (c *Controller) runWatcher(threadiness int, stopCh chan struct{}) {
-
 	defer runtime.HandleCrash()
 
 	// Let the workers stop when we are done
@@ -196,10 +193,10 @@ func (c *Controller) runMemcachedInjector(key string) error {
 	} else {
 		// Note that you also have to check the uid if you have a local controlled resource, which
 		// is dependent on the actual instance, to detect that a Memcached was recreated with the same name
-		memcached := obj.(*api.Memcached)
+		memcached := obj.(*api.Memcached).DeepCopy()
 		if memcached.DeletionTimestamp != nil {
 			if core_util.HasFinalizer(memcached.ObjectMeta, "kubedb.com") {
-				if err := c.pause(memcached.DeepCopy()); err != nil {
+				if err := c.pause(memcached); err != nil {
 					log.Errorln(err)
 				}
 				memcached, _, err = util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
@@ -213,7 +210,7 @@ func (c *Controller) runMemcachedInjector(key string) error {
 				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, "kubedb.com")
 				return in
 			})
-			if err := c.create(memcached.DeepCopy()); err != nil {
+			if err := c.create(memcached); err != nil {
 				log.Errorln(err)
 				c.pushFailureEvent(memcached, err.Error())
 				return err

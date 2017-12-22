@@ -19,7 +19,7 @@ func (c *Controller) ensureService(memcached *api.Memcached) (kutil.VerbType, er
 		return kutil.VerbUnchanged, err
 	}
 	// create database Service
-	ok, err := c.createService(memcached)
+	vt, err := c.createService(memcached)
 	if err != nil {
 		c.recorder.Eventf(
 			memcached.ObjectReference(),
@@ -29,22 +29,16 @@ func (c *Controller) ensureService(memcached *api.Memcached) (kutil.VerbType, er
 			err,
 		)
 		return kutil.VerbUnchanged, err
-	} else if ok == kutil.VerbCreated {
-		c.recorder.Event(
+	} else if vt != kutil.VerbUnchanged {
+		c.recorder.Eventf(
 			memcached.ObjectReference(),
 			core.EventTypeNormal,
 			eventer.EventReasonSuccessful,
-			"Successfully created Service",
-		)
-	} else if ok == kutil.VerbPatched {
-		c.recorder.Event(
-			memcached.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessful,
-			"Successfully patched Service",
+			"Successfully %s Service",
+			vt,
 		)
 	}
-	return ok, nil
+	return vt, nil
 }
 
 func (c *Controller) checkService(memcached *api.Memcached) error {

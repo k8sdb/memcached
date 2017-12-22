@@ -1,5 +1,5 @@
 hash: 2b7bcdd447c526e856d15a2f19eaee5187b44ed715fc3d7b1bc8e625348cda5f
-updated: 2017-12-22T18:42:08.921437287+06:00
+updated: 2017-12-22T09:32:48.951781437-05:00
 imports:
 - name: cloud.google.com/go
   version: fe3d41e1ecb2ce36ad3a979037c9b9a2b726226f
@@ -9,11 +9,13 @@ imports:
 - name: github.com/appscode/go
   version: f08cee5a2aa53a1ab6d30e4ae11e381d1b265f81
   subpackages:
+  - analytics
   - context
   - crypto/rand
   - encoding/json/types
   - encoding/yaml
   - hold
+  - homedir
   - log
   - log/golog
   - runtime
@@ -35,6 +37,7 @@ imports:
   - core/v1
   - meta
   - rbac/v1beta1
+  - tools/analytics
 - name: github.com/appscode/mergo
   version: e3000cb3d28c72b837601cac94debd91032d19fe
 - name: github.com/appscode/osm
@@ -95,7 +98,7 @@ imports:
   subpackages:
   - pkg/client/monitoring/v1
 - name: github.com/cpuguy83/go-md2man
-  version: 1d903dcb749992f3741d744c0f8376b4bd7eb3e1
+  version: 71acacd42f85e5e82f70a55327789582a5200a90
   subpackages:
   - md2man
 - name: github.com/davecgh/go-spew
@@ -127,7 +130,7 @@ imports:
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
 - name: github.com/go-ini/ini
-  version: d3de07a94d22b4a0972deb4b96d790c2c0ce8333
+  version: 2e44421e256d82ebbf3d4d4fcabe8930b905eff3
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
@@ -142,7 +145,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: 02826c3e79038b59d737d3b1c0a1d937f71a4433
   subpackages:
@@ -168,7 +171,7 @@ imports:
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/google/uuid
-  version: e367a344cbe8e08149f9951115dc299ebd42b919
+  version: dec09d789f3dba190787f8b4454c7d3c936fed9e
 - name: github.com/googleapis/gnostic
   version: 0c5108395e2debce0d731cf0287ddf7242066aba
   subpackages:
@@ -271,7 +274,7 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
 - name: github.com/orcaman/concurrent-map
-  version: 2ae17bc4c860c83513ee50feb9746f3e50d7515d
+  version: d4c23bd0e01134806215ffe65ba3fd22ec6721f7
 - name: github.com/peterbourgon/diskv
   version: 5f041e8faa004a95c88a202771f4cc3e991971e6
 - name: github.com/pkg/errors
@@ -380,7 +383,7 @@ imports:
   - googleapi/internal/uritemplates
   - storage/v1
 - name: google.golang.org/appengine
-  version: 4f7eeb5305a4ba1966344836ba4af9996b7b4e05
+  version: 5bee14b453b4c71be47ec1781b0fa61c2ea182db
   subpackages:
   - internal
   - internal/app_identity

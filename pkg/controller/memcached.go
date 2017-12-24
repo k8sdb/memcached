@@ -52,7 +52,20 @@ func (c *Controller) create(memcached *api.Memcached) error {
 	}
 	// set replica to at least 1
 	if memcached.Spec.Replicas < 1 {
-		memcached.Spec.Replicas = 1
+		mc, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
+			in.Spec.Replicas = 1
+			return in
+		})
+		if err != nil {
+			c.recorder.Eventf(
+				memcached.ObjectReference(),
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToUpdate,
+				err.Error(),
+			)
+			return err
+		}
+		memcached.Spec = mc.Spec
 	}
 
 	// Check DormantDatabase
@@ -110,7 +123,6 @@ func (c *Controller) setMonitoringPort(memcached *api.Memcached) error {
 				in.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
 				return in
 			})
-
 			if err != nil {
 				c.recorder.Eventf(
 					memcached.ObjectReference(),
@@ -212,7 +224,7 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 	//	return nil
 	//}
 
-	if _, err := c.createDormantDatabase(memcached); err != nil {
+	if _, err := c.createDormantDatabase(memcached); err != nil && !kerr.IsAlreadyExists(err) {
 		c.recorder.Eventf(
 			memcached.ObjectReference(),
 			core.EventTypeWarning,

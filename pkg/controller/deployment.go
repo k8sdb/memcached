@@ -64,7 +64,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 					Protocol:      core.ProtocolTCP,
 				},
 			},
-			//todo: security context
+			Resources: memcached.Spec.Resources,
 		})
 		if memcached.Spec.Monitor != nil &&
 			memcached.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&

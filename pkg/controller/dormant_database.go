@@ -2,21 +2,30 @@ package controller
 
 import (
 	"github.com/appscode/go/log"
+	"github.com/appscode/kutil"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func (c *Controller) Exists(om *metav1.ObjectMeta) (bool, error) {
-	memcached, err := c.ExtClient.Memcacheds(om.Namespace).Get(om.Name, metav1.GetOptions{})
+	// Wait while Memcached CRD object is being deleted
+	err := wait.PollImmediate(kutil.RetryInterval, kutil.ReadinessTimeout, func() (bool, error) {
+		_, err := c.ExtClient.Memcacheds(om.Namespace).Get(om.Name, metav1.GetOptions{})
+		if err != nil && kerr.IsNotFound(err) {
+			return true, nil
+		}
+		return false, nil
+	})
+	if err != nil {
+		log.Errorln(err)
+	}
+	_, err = c.ExtClient.Memcacheds(om.Namespace).Get(om.Name, metav1.GetOptions{})
 	if err != nil {
 		if !kerr.IsNotFound(err) {
 			return false, err
 		}
-		return false, nil
-	}
-
-	if memcached.DeletionTimestamp != nil {
 		return false, nil
 	}
 	return true, nil

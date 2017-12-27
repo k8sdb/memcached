@@ -100,9 +100,9 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
+	root.CleanMemcached()
+	root.CleanDormantDatabase()
 	err := root.DeleteNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Deleted namespace")
-	root.CleanMemcached()
-	root.CleanDormantDatabase()
 })

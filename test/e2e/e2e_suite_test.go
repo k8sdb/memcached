@@ -29,7 +29,7 @@ var dockerRegistry string
 
 func init() {
 	flag.StringVar(&storageClass, "storageclass", "standard", "Kubernetes StorageClass name")
-	flag.StringVar(&exporterTag, "exporter-tag", "latest", "Tag of kubedb/operator used as exporter")
+	flag.StringVar(&exporterTag, "exporter-tag", "canary", "Tag of kubedb/operator used as exporter")
 	flag.StringVar(&dockerRegistry, "docker-registry", "kubedb", "User provided docker repository")
 }
 

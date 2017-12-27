@@ -5,6 +5,7 @@ import (
 )
 
 const (
+	ImageKubedbOperator    = "operator"
 	ImageMemcachedOperator = "ms-operator"
 	ImageMemcached         = "memcached"
 	ImageMemcachedTools    = "memcached-tools"
@@ -26,7 +27,7 @@ func (d Docker) GetImageWithTag(memcached *api.Memcached) string {
 }
 
 func (d Docker) GetOperatorImage(memcached *api.Memcached) string {
-	return d.Registry + "/" + ImageMemcachedOperator
+	return d.Registry + "/" + ImageKubedbOperator
 }
 
 func (d Docker) GetOperatorImageWithTag(memcached *api.Memcached) string {

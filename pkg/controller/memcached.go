@@ -181,9 +181,6 @@ func (c *Controller) matchDormantDatabase(memcached *api.Memcached) error {
 		return sendEvent("Memcached spec mismatches with OriginSpec in DormantDatabases")
 	}
 
-	if err := c.ExtClient.Memcacheds(memcached.Namespace).Delete(memcached.Name, &metav1.DeleteOptions{}); err != nil {
-		return sendEvent(`failed to resume Memcached "%v" from DormantDatabase "%v". Error: %v`, memcached.Name, memcached.Name, err)
-	}
 	return util.DeleteDormantDatabase(c.ExtClient, dormantDb.ObjectMeta)
 }
 

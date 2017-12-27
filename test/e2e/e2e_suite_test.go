@@ -26,10 +26,12 @@ import (
 
 var storageClass string
 var exporterTag string
+var dockerRegistry string
 
 func init() {
 	flag.StringVar(&storageClass, "storageclass", "standard", "Kubernetes StorageClass name")
-	flag.StringVar(&exporterTag, "exporter-tag", "", "Tag of kubedb/operator used as exporter")
+	flag.StringVar(&exporterTag, "exporter-tag", "latest", "Tag of kubedb/operator used as exporter")
+	flag.StringVar(&dockerRegistry, "docker-registry", "kubedb", "User provided docker repository")
 }
 
 const (
@@ -84,7 +86,7 @@ var _ = BeforeSuite(func() {
 
 	opt := controller.Options{
 		Docker: docker.Docker{
-			Registry:    "kubedb",
+			Registry:    dockerRegistry,
 			ExporterTag: exporterTag,
 		},
 		OperatorNamespace: root.Namespace(),

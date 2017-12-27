@@ -5,6 +5,7 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/encoding/json/types"
+	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	. "github.com/onsi/gomega"
@@ -37,7 +38,12 @@ func (f *Framework) GetMemcached(meta metav1.ObjectMeta) (*api.Memcached, error)
 }
 
 func (f *Framework) TryPatchMemcached(meta metav1.ObjectMeta, transform func(*api.Memcached) *api.Memcached) (*api.Memcached, error) {
-	return util.TryPatchMemcached(f.extClient, meta, transform)
+	memcached, err := f.extClient.Memcacheds(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	memcached, _, err = util.PatchMemcached(f.extClient, memcached, transform)
+	return memcached, err
 }
 
 func (f *Framework) DeleteMemcached(meta metav1.ObjectMeta) error {
@@ -72,4 +78,17 @@ func (f *Framework) EventuallyMemcachedRunning(meta metav1.ObjectMeta) GomegaAsy
 		time.Minute*5,
 		time.Second*5,
 	)
+}
+
+func (f *Framework) CleanMemcached() {
+	memcachedList, err := f.extClient.Memcacheds(f.namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return
+	}
+	for _, m := range memcachedList.Items {
+		util.PatchMemcached(f.extClient, &m, func(in *api.Memcached) *api.Memcached {
+			in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, "kubedb.com")
+			return in
+		})
+	}
 }

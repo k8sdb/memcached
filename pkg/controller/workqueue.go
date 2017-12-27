@@ -6,10 +6,9 @@ import (
 
 	"github.com/appscode/go/log"
 	core_util "github.com/appscode/kutil/core/v1"
-	"github.com/google/go-cmp/cmp"
+	"github.com/appscode/kutil/meta"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rt "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -80,23 +79,8 @@ func MemcachedEqual(old, new *api.Memcached) bool {
 	if new != nil {
 		newSpec = &new.Spec
 	}
-
-	opts := []cmp.Option{
-		cmp.Comparer(func(x, y resource.Quantity) bool {
-			return x.Cmp(y) == 0
-		}),
-		cmp.Comparer(func(x, y *metav1.Time) bool {
-			if x == nil && y == nil {
-				return true
-			}
-			if x != nil && y != nil {
-				return x.Time.Equal(y.Time)
-			}
-			return false
-		}),
-	}
-	if !cmp.Equal(oldSpec, newSpec, opts...) {
-		diff := cmp.Diff(oldSpec, newSpec, opts...)
+	if !meta.Equal(oldSpec, newSpec) {
+		diff := meta.Diff(oldSpec, newSpec)
 		log.Infoln("Memcached %s/%s has changed. Diff: %s", new.Namespace, new.Name, diff)
 		return false
 	}

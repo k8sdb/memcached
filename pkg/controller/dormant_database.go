@@ -16,15 +16,18 @@ func (c *Controller) Exists(om *metav1.ObjectMeta) (bool, error) {
 		return false, nil
 	}
 
-	if memcached.DeletionTimestamp != nil {
-		return false, nil
-	}
-	return true, nil
+	return memcached.DeletionTimestamp == nil, nil
 }
 
 func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
+	memcached := &api.Memcached{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      dormantDb.OffshootName(),
+			Namespace: dormantDb.Namespace,
+		},
+	}
 	// Delete Service
-	if err := c.DeleteService(dormantDb.Name, dormantDb.Namespace); err != nil {
+	if err := c.deleteService(memcached.OffshootName(), dormantDb.Namespace); err != nil {
 		log.Errorln(err)
 		return err
 	}
@@ -34,12 +37,6 @@ func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 		return err
 	}
 
-	memcached := &api.Memcached{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      dormantDb.OffshootName(),
-			Namespace: dormantDb.Namespace,
-		},
-	}
 	if err := c.deleteRBACStuff(memcached); err != nil {
 		log.Errorln(err)
 		return err

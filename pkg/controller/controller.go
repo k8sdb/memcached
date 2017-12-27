@@ -11,7 +11,10 @@ import (
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	amc "github.com/kubedb/apimachinery/pkg/controller"
+	drmnc "github.com/kubedb/apimachinery/pkg/controller/dormant_database"
+	snapc "github.com/kubedb/apimachinery/pkg/controller/snapshot"
 	"github.com/kubedb/apimachinery/pkg/eventer"
+	"github.com/kubedb/memcached/pkg/docker"
 	core "k8s.io/api/core/v1"
 	crd_api "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiext_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
@@ -26,10 +29,9 @@ import (
 )
 
 type Options struct {
-	// Operator namespace
+	Docker docker.Docker
+	// Exporter namespace
 	OperatorNamespace string
-	// Exporter tag
-	ExporterTag string
 	// Governing service
 	GoverningService string
 	// Address to listen on for web interface and telemetry.
@@ -42,12 +44,10 @@ type Options struct {
 
 type Controller struct {
 	*amc.Controller
-	// Api Extension Client
-	ApiExtKubeClient apiext_cs.ApiextensionsV1beta1Interface
 	// Prometheus client
 	promClient pcm.MonitoringV1Interface
 	// Cron Controller
-	cronController amc.CronControllerInterface
+	cronController snapc.CronControllerInterface
 	// Event Recorder
 	recorder record.EventRecorder
 	// Flag data
@@ -61,27 +61,27 @@ type Controller struct {
 	informer cache.Controller
 }
 
-var _ amc.Deleter = &Controller{}
+var _ drmnc.Deleter = &Controller{}
 
 func New(
 	client kubernetes.Interface,
 	apiExtKubeClient apiext_cs.ApiextensionsV1beta1Interface,
 	extClient cs.KubedbV1alpha1Interface,
 	promClient pcm.MonitoringV1Interface,
-	cronController amc.CronControllerInterface,
+	cronController snapc.CronControllerInterface,
 	opt Options,
 ) *Controller {
 	return &Controller{
 		Controller: &amc.Controller{
-			Client:    client,
-			ExtClient: extClient,
+			Client:           client,
+			ExtClient:        extClient,
+			ApiExtKubeClient: apiExtKubeClient,
 		},
-		ApiExtKubeClient: apiExtKubeClient,
-		promClient:       promClient,
-		cronController:   cronController,
-		recorder:         eventer.NewEventRecorder(client, "Memcached operator"),
-		opt:              opt,
-		syncPeriod:       time.Minute * 5,
+		promClient:     promClient,
+		cronController: cronController,
+		recorder:       eventer.NewEventRecorder(client, "Memcached operator"),
+		opt:            opt,
+		syncPeriod:     time.Minute * 5,
 	}
 }
 
@@ -141,7 +141,7 @@ func (c *Controller) watchDeletedDatabase() {
 		},
 	}
 
-	amc.NewDormantDbController(c.Client, c.ApiExtKubeClient, c.ExtClient, c, lw, c.syncPeriod).Run()
+	drmnc.NewController(c.Controller, c, lw, c.syncPeriod).Run()
 }
 
 func (c *Controller) pushFailureEvent(memcached *api.Memcached, reason string) {
@@ -154,7 +154,7 @@ func (c *Controller) pushFailureEvent(memcached *api.Memcached, reason string) {
 		reason,
 	)
 
-	_, err := util.TryPatchMemcached(c.ExtClient, memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
+	mc, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
 		in.Status.Phase = api.DatabasePhaseFailed
 		in.Status.Reason = reason
 		return in
@@ -162,4 +162,5 @@ func (c *Controller) pushFailureEvent(memcached *api.Memcached, reason string) {
 	if err != nil {
 		c.recorder.Eventf(memcached.ObjectReference(), core.EventTypeWarning, eventer.EventReasonFailedToUpdate, err.Error())
 	}
+	memcached.Status = mc.Status
 }

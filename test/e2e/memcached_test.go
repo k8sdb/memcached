@@ -42,7 +42,7 @@ var _ = Describe("Memcached", func() {
 		f.EventuallyDormantDatabaseStatus(memcached.ObjectMeta).Should(matcher.HavePaused())
 
 		By("WipeOut memcached")
-		_, err := f.TryPatchDormantDatabase(memcached.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
+		_, err := f.PatchDormantDatabase(memcached.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
 			in.Spec.WipeOut = true
 			return in
 		})
@@ -128,7 +128,7 @@ var _ = Describe("Memcached", func() {
 				By("Wait for memcached to be paused")
 				f.EventuallyDormantDatabaseStatus(memcached.ObjectMeta).Should(matcher.HavePaused())
 
-				_, err = f.TryPatchDormantDatabase(memcached.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
+				_, err = f.PatchDormantDatabase(memcached.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
 					in.Spec.Resume = true
 					return in
 				})

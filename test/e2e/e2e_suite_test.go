@@ -11,7 +11,8 @@ import (
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
-	amc "github.com/kubedb/apimachinery/pkg/controller"
+	snapc "github.com/kubedb/apimachinery/pkg/controller/snapshot"
+	"github.com/kubedb/memcached/pkg/docker"
 	"github.com/kubedb/memcached/pkg/controller"
 	"github.com/kubedb/memcached/test/e2e/framework"
 	"github.com/mitchellh/go-homedir"
@@ -65,7 +66,9 @@ var _ = BeforeSuite(func() {
 	apiExtKubeClient := crd_cs.NewForConfigOrDie(config)
 	extClient := cs.NewForConfigOrDie(config)
 	promClient, err := pcm.NewForConfig(config)
-
+	if err != nil {
+		log.Fatalln(err)
+	}
 	// Framework
 	root = framework.New(kubeClient, extClient, storageClass)
 
@@ -75,15 +78,18 @@ var _ = BeforeSuite(func() {
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 
-	cronController := amc.NewCronController(kubeClient, extClient)
+	cronController := snapc.NewCronController(kubeClient, extClient)
 	// Start Cron
 	cronController.StartCron()
 
 	opt := controller.Options{
+		Docker: docker.Docker{
+			Registry: "kubedb",
+			ExporterTag: exporterTag,
+		},
 		OperatorNamespace: root.Namespace(),
 		GoverningService:  api.DatabaseNamePrefix,
 		MaxNumRequeues:    5,
-		ExporterTag:       exporterTag,
 	}
 
 	// Controller
@@ -100,4 +106,6 @@ var _ = AfterSuite(func() {
 	err := root.DeleteNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Deleted namespace")
+	root.CleanMemcached()
+	root.CleanDormantDatabase()
 })

@@ -10,7 +10,6 @@ import (
 	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
-	"github.com/kubedb/apimachinery/pkg/docker"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	apps "k8s.io/api/apps/v1beta1"
 	core "k8s.io/api/core/v1"
@@ -55,7 +54,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 
 		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(in.Spec.Template.Spec.Containers, core.Container{
 			Name:            api.ResourceNameMemcached,
-			Image:           fmt.Sprintf("%s:%s", docker.ImageMemcached, memcached.Spec.Version),
+			Image:           c.opt.Docker.GetImageWithTag(memcached),
 			ImagePullPolicy: core.PullIfNotPresent,
 			Ports: []core.ContainerPort{
 				{
@@ -64,7 +63,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 					Protocol:      core.ProtocolTCP,
 				},
 			},
-			//todo: security context
+			Resources: memcached.Spec.Resources,
 		})
 		if memcached.Spec.Monitor != nil &&
 			memcached.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
@@ -76,7 +75,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 					fmt.Sprintf("--address=:%d", memcached.Spec.Monitor.Prometheus.Port),
 					"--v=3",
 				},
-				Image:           docker.ImageOperator + ":" + c.opt.ExporterTag,
+				Image:           c.opt.Docker.GetOperatorImageWithTag(memcached),
 				ImagePullPolicy: core.PullIfNotPresent,
 				Ports: []core.ContainerPort{
 					{

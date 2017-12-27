@@ -6,7 +6,7 @@ import (
 
 	"github.com/appscode/go/log"
 	core_util "github.com/appscode/kutil/core/v1"
-	"github.com/appscode/kutil/meta"
+	meta_util "github.com/appscode/kutil/meta"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -79,8 +79,8 @@ func MemcachedEqual(old, new *api.Memcached) bool {
 	if new != nil {
 		newSpec = &new.Spec
 	}
-	if !meta.Equal(oldSpec, newSpec) {
-		diff := meta.Diff(oldSpec, newSpec)
+	if !meta_util.Equal(oldSpec, newSpec) {
+		diff := meta_util.Diff(oldSpec, newSpec)
 		log.Infoln("Memcached %s/%s has changed. Diff: %s", new.Namespace, new.Name, diff)
 		return false
 	}

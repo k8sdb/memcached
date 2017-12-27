@@ -2,7 +2,7 @@ package: github.com/kubedb/memcached
 import:
 - package: github.com/appscode/go
 - package: github.com/appscode/kutil
-  version: master
+  version: release-5.0
 - package: github.com/appscode/kube-mon
   version: master
 - package: github.com/appscode/pat

@@ -12,13 +12,12 @@ import (
 
 func ValidateMemcached(client kubernetes.Interface, memcached *api.Memcached, docker dr.Docker) error {
 	if memcached.Spec.Version == "" {
-		return fmt.Errorf(`Object 'Version' is missing in '%v'`, memcached.Spec)
+		return fmt.Errorf(`object 'Version' is missing in '%v'`, memcached.Spec)
 	}
 
-	// Set Database Image version
 	version := string(memcached.Spec.Version)
 	if err := adr.CheckDockerImageVersion(docker.GetImage(memcached), version); err != nil {
-		return fmt.Errorf(`Image %v:%v not found`, docker.GetImageWithTag(memcached))
+		return fmt.Errorf(`image %s not found`, docker.GetImageWithTag(memcached))
 	}
 
 	monitorSpec := memcached.Spec.Monitor

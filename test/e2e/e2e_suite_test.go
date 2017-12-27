@@ -12,8 +12,8 @@ import (
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
 	snapc "github.com/kubedb/apimachinery/pkg/controller/snapshot"
-	"github.com/kubedb/memcached/pkg/docker"
 	"github.com/kubedb/memcached/pkg/controller"
+	"github.com/kubedb/memcached/pkg/docker"
 	"github.com/kubedb/memcached/test/e2e/framework"
 	"github.com/mitchellh/go-homedir"
 	. "github.com/onsi/ginkgo"
@@ -84,7 +84,7 @@ var _ = BeforeSuite(func() {
 
 	opt := controller.Options{
 		Docker: docker.Docker{
-			Registry: "kubedb",
+			Registry:    "kubedb",
 			ExporterTag: exporterTag,
 		},
 		OperatorNamespace: root.Namespace(),

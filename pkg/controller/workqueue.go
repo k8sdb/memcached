@@ -61,7 +61,7 @@ func (c *Controller) initWatcher() {
 				log.Errorln("Invalid Memcached object")
 				return
 			}
-			if newObj.DeletionTimestamp != nil || !MemcachedEqual(oldObj, newObj) {
+			if newObj.DeletionTimestamp != nil || !memcachedEqual(oldObj, newObj) {
 				key, err := cache.MetaNamespaceKeyFunc(new)
 				if err == nil {
 					c.queue.Add(key)
@@ -71,16 +71,9 @@ func (c *Controller) initWatcher() {
 	}, cache.Indexers{})
 }
 
-func MemcachedEqual(old, new *api.Memcached) bool {
-	var oldSpec, newSpec *api.MemcachedSpec
-	if old != nil {
-		oldSpec = &old.Spec
-	}
-	if new != nil {
-		newSpec = &new.Spec
-	}
-	if !meta_util.Equal(oldSpec, newSpec) {
-		diff := meta_util.Diff(oldSpec, newSpec)
+func memcachedEqual(old, new *api.Memcached) bool {
+	if !meta_util.Equal(old.Spec, new.Spec) {
+		diff := meta_util.Diff(old.Spec, new.Spec)
 		log.Infoln("Memcached %s/%s has changed. Diff: %s", new.Namespace, new.Name, diff)
 		return false
 	}

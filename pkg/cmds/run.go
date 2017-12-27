@@ -11,7 +11,6 @@ import (
 	stringz "github.com/appscode/go/strings"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
-	snapc "github.com/kubedb/apimachinery/pkg/controller/snapshot"
 	"github.com/kubedb/memcached/pkg/controller"
 	"github.com/kubedb/memcached/pkg/docker"
 	"github.com/spf13/cobra"
@@ -57,12 +56,7 @@ func NewCmdRun(version string) *cobra.Command {
 				log.Fatalln(err)
 			}
 
-			cronController := snapc.NewCronController(client, extClient)
-			// Start Cron
-			cronController.StartCron()
-			defer cronController.StopCron()
-
-			w := controller.New(client, apiExtKubeClient, extClient, promClient, cronController, opt)
+			w := controller.New(client, apiExtKubeClient, extClient, promClient, opt)
 			defer runtime.HandleCrash()
 
 			// Ensuring Custom Resource Definitions

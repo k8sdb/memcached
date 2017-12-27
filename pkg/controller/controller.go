@@ -12,7 +12,6 @@ import (
 	"github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1/util"
 	amc "github.com/kubedb/apimachinery/pkg/controller"
 	drmnc "github.com/kubedb/apimachinery/pkg/controller/dormant_database"
-	snapc "github.com/kubedb/apimachinery/pkg/controller/snapshot"
 	"github.com/kubedb/apimachinery/pkg/eventer"
 	"github.com/kubedb/memcached/pkg/docker"
 	core "k8s.io/api/core/v1"
@@ -46,8 +45,6 @@ type Controller struct {
 	*amc.Controller
 	// Prometheus client
 	promClient pcm.MonitoringV1Interface
-	// Cron Controller
-	cronController snapc.CronControllerInterface
 	// Event Recorder
 	recorder record.EventRecorder
 	// Flag data
@@ -68,7 +65,6 @@ func New(
 	apiExtKubeClient apiext_cs.ApiextensionsV1beta1Interface,
 	extClient cs.KubedbV1alpha1Interface,
 	promClient pcm.MonitoringV1Interface,
-	cronController snapc.CronControllerInterface,
 	opt Options,
 ) *Controller {
 	return &Controller{
@@ -77,11 +73,10 @@ func New(
 			ExtClient:        extClient,
 			ApiExtKubeClient: apiExtKubeClient,
 		},
-		promClient:     promClient,
-		cronController: cronController,
-		recorder:       eventer.NewEventRecorder(client, "Memcached operator"),
-		opt:            opt,
-		syncPeriod:     time.Minute * 5,
+		promClient: promClient,
+		recorder:   eventer.NewEventRecorder(client, "Memcached operator"),
+		opt:        opt,
+		syncPeriod: time.Minute * 5,
 	}
 }
 

@@ -11,7 +11,6 @@ import (
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	cs "github.com/kubedb/apimachinery/client/typed/kubedb/v1alpha1"
-	snapc "github.com/kubedb/apimachinery/pkg/controller/snapshot"
 	"github.com/kubedb/memcached/pkg/controller"
 	"github.com/kubedb/memcached/pkg/docker"
 	"github.com/kubedb/memcached/test/e2e/framework"
@@ -80,10 +79,6 @@ var _ = BeforeSuite(func() {
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 
-	cronController := snapc.NewCronController(kubeClient, extClient)
-	// Start Cron
-	cronController.StartCron()
-
 	opt := controller.Options{
 		Docker: docker.Docker{
 			Registry:    dockerRegistry,
@@ -95,7 +90,7 @@ var _ = BeforeSuite(func() {
 	}
 
 	// Controller
-	ctrl = controller.New(kubeClient, apiExtKubeClient, extClient, promClient, cronController, opt)
+	ctrl = controller.New(kubeClient, apiExtKubeClient, extClient, promClient, opt)
 	err = ctrl.Setup()
 	if err != nil {
 		log.Fatalln(err)

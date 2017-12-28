@@ -101,16 +101,17 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 		return kutil.VerbUnchanged, err
 	}
 	// Check Deployment Pod status
-	if err := app_util.WaitUntilDeploymentReady(c.Client, deploymentMeta); err != nil {
-		c.recorder.Eventf(
-			memcached.ObjectReference(),
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToStart,
-			`Failed to CreateOrPatch Deployment. Reason: %v`,
-			err,
-		)
-		return kutil.VerbUnchanged, err
-	} else if vt != kutil.VerbUnchanged {
+	if vt != kutil.VerbUnchanged {
+		if err := app_util.WaitUntilDeploymentReady(c.Client, deploymentMeta); err != nil {
+			c.recorder.Eventf(
+				memcached.ObjectReference(),
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToStart,
+				`Failed to CreateOrPatch Deployment. Reason: %v`,
+				err,
+			)
+			return kutil.VerbUnchanged, err
+		}
 		c.recorder.Eventf(
 			memcached.ObjectReference(),
 			core.EventTypeNormal,
@@ -118,21 +119,21 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 			"Successfully %v Deployment",
 			vt,
 		)
+		mg, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
+			in.Status.Phase = api.DatabasePhaseRunning
+			return in
+		})
+		if err != nil {
+			c.recorder.Eventf(
+				memcached,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToUpdate,
+				err.Error(),
+			)
+			return kutil.VerbUnchanged, err
+		}
+		memcached.Status = mg.Status
 	}
-	mg, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
-		in.Status.Phase = api.DatabasePhaseRunning
-		return in
-	})
-	if err != nil {
-		c.recorder.Eventf(
-			memcached,
-			core.EventTypeWarning,
-			eventer.EventReasonFailedToUpdate,
-			err.Error(),
-		)
-		return kutil.VerbUnchanged, err
-	}
-	memcached.Status = mg.Status
 	return vt, nil
 }
 

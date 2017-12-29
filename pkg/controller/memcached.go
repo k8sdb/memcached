@@ -228,7 +228,7 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 	)
 
 	if memcached.Spec.Monitor != nil {
-		if vt, err := c.deleteMonitor(memcached); err != nil {
+		if _, err := c.deleteMonitor(memcached); err != nil {
 			c.recorder.Eventf(
 				memcached.ObjectReference(),
 				core.EventTypeWarning,
@@ -238,20 +238,7 @@ func (c *Controller) pause(memcached *api.Memcached) error {
 			)
 			log.Errorln(err)
 			return nil
-		} else if vt != kutil.VerbUnchanged {
-			c.recorder.Eventf(
-				memcached.ObjectReference(),
-				core.EventTypeNormal,
-				eventer.EventReasonSuccessfulMonitorDelete,
-				"Successfully %s monitoring system.",
-				vt,
-			)
 		}
 	}
 	return nil
 }
-
-//func (c *Controller) reCreateMemcached(memcached *api.Memcached) error {
-//	//reCreateMemcached
-//	return nil
-//}

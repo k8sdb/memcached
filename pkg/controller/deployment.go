@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/appscode/go/types"
 	"github.com/appscode/kutil"
@@ -15,13 +14,6 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	// Duration in Minute
-	// Check whether pod under Deployment is running or not
-	// Continue checking for this duration until failure
-	durationCheckDeployment = time.Minute * 30
 )
 
 func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType, error) {

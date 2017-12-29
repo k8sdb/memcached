@@ -15,7 +15,6 @@ TAG=1.5.4
 
 docker_names=( \
     "memcached" \
-   # "memcached-tools" \
 )
 
 build() {

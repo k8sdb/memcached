@@ -8,7 +8,6 @@ const (
 	ImageKubedbOperator    = "operator"
 	ImageMemcachedOperator = "ms-operator"
 	ImageMemcached         = "memcached"
-	ImageMemcachedTools    = "memcached-tools"
 )
 
 type Docker struct {
@@ -32,12 +31,4 @@ func (d Docker) GetOperatorImage(memcached *api.Memcached) string {
 
 func (d Docker) GetOperatorImageWithTag(memcached *api.Memcached) string {
 	return d.GetOperatorImage(memcached) + ":" + d.ExporterTag
-}
-
-func (d Docker) GetToolsImage(memcached *api.Memcached) string {
-	return d.Registry + "/" + ImageMemcachedTools
-}
-
-func (d Docker) GetToolsImageWithTag(memcached *api.Memcached) string {
-	return d.GetToolsImage(memcached) + ":" + string(memcached.Spec.Version)
 }

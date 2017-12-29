@@ -153,25 +153,3 @@ func (c *Controller) checkDeployment(memcached *api.Memcached) error {
 	}
 	return nil
 }
-
-func (c *Controller) deleteDeployment(name, namespace string) error {
-	// Deployment for Memcached database
-	deployment, err := c.Client.AppsV1beta1().Deployments(namespace).Get(name, metav1.GetOptions{})
-	if err != nil {
-		if kerr.IsNotFound(err) {
-			return nil
-		} else {
-			return err
-		}
-	}
-	deletePolicy := metav1.DeletePropagationForeground
-	if err := c.Client.AppsV1beta1().Deployments(deployment.Namespace).Delete(deployment.Name, &metav1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	}); err != nil && !kerr.IsNotFound(err) {
-		return err
-	}
-	if err := core_util.WaitUntilPodDeletedBySelector(c.Client, namespace, deployment.Spec.Selector); err != nil {
-		return err
-	}
-	return nil
-}

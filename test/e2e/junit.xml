@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="5" failures="0" time="470.604342602">
-      <testcase name="Memcached Test General - should run successfully" classname="e2e Suite" time="60.044612675"></testcase>
-      <testcase name="Memcached Test General Multiple Replica should run successfully" classname="e2e Suite" time="60.03498319"></testcase>
-      <testcase name="Memcached Test Resume - should resume DormantDatabase successfully" classname="e2e Suite" time="120.076521301"></testcase>
-      <testcase name="Memcached Test Resume With original Memcached should resume DormantDatabase successfully" classname="e2e Suite" time="120.073541667"></testcase>
+  <testsuite tests="4" failures="0" time="311.654199489">
+      <testcase name="Memcached Test General - should run successfully" classname="e2e Suite" time="60.072036569"></testcase>
+      <testcase name="Memcached Test General Multiple Replica should run successfully" classname="e2e Suite" time="60.061748132"></testcase>
+      <testcase name="Memcached Test Resume - should resume DormantDatabase successfully" classname="e2e Suite" time="120.129729023"></testcase>
   </testsuite>

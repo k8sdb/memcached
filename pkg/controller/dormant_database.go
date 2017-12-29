@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/appscode/go/log"
+	apps_util "github.com/appscode/kutil/apps/v1beta1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +33,10 @@ func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 		return err
 	}
 
-	if err := c.deleteDeployment(dormantDb.OffshootName(), dormantDb.Namespace); err != nil && !kerr.IsNotFound(err) {
+	if err := apps_util.DeleteDeployment(c.Client, metav1.ObjectMeta{
+		Name:      memcached.OffshootName(),
+		Namespace: dormantDb.Namespace,
+	}); err != nil {
 		log.Errorln(err)
 		return err
 	}

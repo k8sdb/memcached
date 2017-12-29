@@ -45,8 +45,6 @@ func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 }
 
 func (c *Controller) WipeOutDatabase(dormantDb *api.DormantDatabase) error {
-	log.Info("No snapshot for Memcached.")
-
 	return nil
 }
 

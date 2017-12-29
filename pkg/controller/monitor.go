@@ -7,8 +7,6 @@ import (
 	mona "github.com/appscode/kube-mon/api"
 	"github.com/appscode/kutil"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/kubedb/apimachinery/pkg/eventer"
-	core "k8s.io/api/core/v1"
 )
 
 func (c *Controller) newMonitorController(memcached *api.Memcached) (mona.Agent, error) {
@@ -43,29 +41,17 @@ func (c *Controller) deleteMonitor(memcached *api.Memcached) (kutil.VerbType, er
 
 // todo: needs to set on status
 func (c *Controller) manageMonitor(memcached *api.Memcached) error {
-	vt := kutil.VerbUnchanged
 	if memcached.Spec.Monitor != nil {
-		ok1, err := c.addOrUpdateMonitor(memcached)
+		_, err := c.addOrUpdateMonitor(memcached)
 		if err != nil {
 			return err
 		}
-		vt = ok1
 	} else {
 		agent := agents.New(mona.AgentCoreOSPrometheus, c.Client, c.ApiExtKubeClient, c.promClient)
-		ok1, err := agent.CreateOrUpdate(memcached.StatsAccessor(), memcached.Spec.Monitor)
+		_, err := agent.CreateOrUpdate(memcached.StatsAccessor(), memcached.Spec.Monitor)
 		if err != nil {
 			return err
 		}
-		vt = ok1
-	}
-	if vt != kutil.VerbUnchanged {
-		c.recorder.Eventf(
-			memcached.ObjectReference(),
-			core.EventTypeNormal,
-			eventer.EventReasonSuccessful,
-			"Successfully %v monitoring system.",
-			vt,
-		)
 	}
 	return nil
 }

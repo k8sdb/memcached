@@ -83,6 +83,8 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 		in.Spec.Template.Spec.Affinity = memcached.Spec.Affinity
 		in.Spec.Template.Spec.SchedulerName = memcached.Spec.SchedulerName
 		in.Spec.Template.Spec.Tolerations = memcached.Spec.Tolerations
+		in.Spec.Template.Spec.ImagePullSecrets = memcached.Spec.ImagePullSecrets
+
 		if c.opt.EnableRbac {
 			in.Spec.Template.Spec.ServiceAccountName = memcached.Name
 		}

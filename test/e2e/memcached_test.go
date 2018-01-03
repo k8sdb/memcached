@@ -148,7 +148,7 @@ var _ = Describe("Memcached", func() {
 			}
 
 			Context("-", func() {
-				It("should resume DormantDatabase successfully", shouldResumeSuccessfully)
+				FIt("should resume DormantDatabase successfully", shouldResumeSuccessfully)
 			})
 
 			Context("With original Memcached", func() {

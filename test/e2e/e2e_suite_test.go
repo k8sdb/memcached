@@ -23,11 +23,13 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var storageClass, exporterTag, dockerRegistry string
+var (
+	storageClass   string
+	dockerRegistry string
+)
 
 func init() {
 	flag.StringVar(&storageClass, "storageclass", "standard", "Kubernetes StorageClass name")
-	flag.StringVar(&exporterTag, "exporter-tag", "canary", "Tag of kubedb/operator used as exporter")
 	flag.StringVar(&dockerRegistry, "docker-registry", "kubedb", "User provided docker repository")
 }
 
@@ -78,8 +80,7 @@ var _ = BeforeSuite(func() {
 
 	opt := controller.Options{
 		Docker: docker.Docker{
-			Registry:    dockerRegistry,
-			ExporterTag: exporterTag,
+			Registry: dockerRegistry,
 		},
 		OperatorNamespace: root.Namespace(),
 		GoverningService:  api.DatabaseNamePrefix,

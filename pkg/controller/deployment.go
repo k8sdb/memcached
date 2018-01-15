@@ -21,6 +21,12 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 		return kutil.VerbUnchanged, err
 	}
 
+	if isMonitoringCoreOSOperator(memcached) && c.opt.EnableRbac {
+		if err := c.ensureRBACStuff(memcached); err != nil {
+			return kutil.VerbUnchanged, err
+		}
+	}
+
 	deploymentMeta := metav1.ObjectMeta{
 		Name:      memcached.OffshootName(),
 		Namespace: memcached.Namespace,
@@ -50,9 +56,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 			},
 			Resources: memcached.Spec.Resources,
 		})
-		if memcached.Spec.Monitor != nil &&
-			memcached.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
-			memcached.Spec.Monitor.Prometheus != nil {
+		if isMonitoringCoreOSOperator(memcached) {
 			in.Spec.Template.Spec.Containers = core_util.UpsertContainer(in.Spec.Template.Spec.Containers, core.Container{
 				Name: "exporter",
 				Args: []string{
@@ -70,6 +74,9 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 					},
 				},
 			})
+			if c.opt.EnableRbac {
+				in.Spec.Template.Spec.ServiceAccountName = memcached.Name
+			}
 		}
 
 		in.Spec.Template.Spec.NodeSelector = memcached.Spec.NodeSelector

@@ -40,6 +40,10 @@ func (c *Controller) PauseDatabase(dormantDb *api.DormantDatabase) error {
 		log.Errorln(err)
 		return err
 	}
+	if err := c.deleteRBACStuff(memcached); err != nil {
+		log.Errorln(err)
+		return err
+	}
 
 	return nil
 }

@@ -71,11 +71,11 @@ func (c *Controller) setNewAgent(memcached *api.Memcached) error {
 func (c *Controller) manageMonitor(memcached *api.Memcached) error {
 	oldAgent := c.getOldAgent(memcached)
 	if memcached.Spec.Monitor != nil {
-		if oldAgent != nil {
-			if oldAgent.GetType() != memcached.Spec.Monitor.Agent {
-				if _, err := oldAgent.Delete(memcached.StatsAccessor()); err != nil {
-					log.Debugf("error in deleting Prometheus agent:", err)
-				}
+		if oldAgent != nil &&
+			oldAgent.GetType() != memcached.Spec.Monitor.Agent {
+			if _, err := oldAgent.Delete(memcached.StatsAccessor()); err != nil {
+				log.Debugf("error in deleting Prometheus agent:", err)
+
 			}
 		}
 		if _, err := c.addOrUpdateMonitor(memcached); err != nil {
@@ -88,4 +88,14 @@ func (c *Controller) manageMonitor(memcached *api.Memcached) error {
 		}
 	}
 	return nil
+}
+
+// check if the monitoring agent is "coreos-prometheus-operator"
+func isMonitoringCoreOSOperator(memcached *api.Memcached) bool {
+	if memcached.Spec.Monitor != nil &&
+		memcached.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
+		memcached.Spec.Monitor.Prometheus != nil {
+		return true
+	}
+	return false
 }

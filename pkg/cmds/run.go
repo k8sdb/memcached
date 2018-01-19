@@ -1,6 +1,7 @@
 package cmds
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -20,23 +21,35 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var (
+	prometheusCrdGroup = pcm.Group
+	prometheusCrdKinds = pcm.DefaultCrdKinds
+
+	opt = controller.Options{
+		Docker: docker.Docker{
+			Registry:    "kubedb",
+			ExporterTag: "canary",
+		},
+		OperatorNamespace: namespace(),
+		GoverningService:  "kubedb",
+		Address:           ":8080",
+		MaxNumRequeues:    5,
+		EnableAnalytics:   true,
+	}
+)
+
+func getPrometheusFlags() *flag.FlagSet {
+	fs := flag.NewFlagSet("prometheus", flag.ExitOnError)
+	fs.StringVar(&prometheusCrdGroup, "prometheus-crd-apigroup", prometheusCrdGroup, "prometheus CRD  API group name")
+	fs.Var(&prometheusCrdKinds, "prometheus-crd-kinds", " - EXPERIMENTAL (could be removed in future releases) - customize CRD kind names")
+	return fs
+}
+
 func NewCmdRun(version string) *cobra.Command {
 	var (
 		masterURL      string
 		kubeconfigPath string
 	)
-
-	opt := controller.Options{
-		Docker: docker.Docker{
-			Registry:    "kubedb",
-			ExporterTag: stringz.Val(version, "canary"),
-		},
-		OperatorNamespace: namespace(),
-		GoverningService:  "kubedb",
-		Address:           ":8080",
-		EnableRbac:        false,
-		MaxNumRequeues:    5,
-	}
 
 	cmd := &cobra.Command{
 		Use:   "run",
@@ -51,7 +64,7 @@ func NewCmdRun(version string) *cobra.Command {
 			client := kubernetes.NewForConfigOrDie(config)
 			apiExtKubeClient := crd_cs.NewForConfigOrDie(config)
 			extClient := cs.NewForConfigOrDie(config)
-			promClient, err := pcm.NewForConfig(config)
+			promClient, err := pcm.NewForConfig(&prometheusCrdKinds, prometheusCrdGroup, config)
 			if err != nil {
 				log.Fatalln(err)
 			}
@@ -75,9 +88,10 @@ func NewCmdRun(version string) *cobra.Command {
 	cmd.Flags().StringVar(&kubeconfigPath, "kubeconfig", "", "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	cmd.Flags().StringVar(&opt.GoverningService, "governing-service", opt.GoverningService, "Governing service for database statefulset")
 	cmd.Flags().StringVar(&opt.Docker.Registry, "docker-registry", opt.Docker.Registry, "User provided docker repository")
-	cmd.Flags().StringVar(&opt.Docker.ExporterTag, "exporter-tag", opt.Docker.ExporterTag, "Tag of kubedb/operator used as exporter")
+	cmd.Flags().StringVar(&opt.Docker.ExporterTag, "exporter-tag", stringz.Val(version, opt.Docker.ExporterTag), "Tag of kubedb/operator used as exporter")
 	cmd.Flags().StringVar(&opt.Address, "address", opt.Address, "Address to listen on for web interface and telemetry.")
-	cmd.Flags().BoolVar(&opt.EnableRbac, "rbac", opt.EnableRbac, "Enable RBAC for database workloads")
+
+	cmd.Flags().AddGoFlagSet(getPrometheusFlags())
 
 	return cmd
 }

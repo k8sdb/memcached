@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/types"
+	mon_api "github.com/appscode/kube-mon/api"
 	"github.com/appscode/kutil"
 	app_util "github.com/appscode/kutil/apps/v1beta1"
 	core_util "github.com/appscode/kutil/core/v1"
@@ -19,12 +20,6 @@ import (
 func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType, error) {
 	if err := c.checkDeployment(memcached); err != nil {
 		return kutil.VerbUnchanged, err
-	}
-
-	if isMonitoringCoreOSOperator(memcached) && c.opt.EnableRbac {
-		if err := c.ensureRBACStuff(memcached); err != nil {
-			return kutil.VerbUnchanged, err
-		}
 	}
 
 	deploymentMeta := metav1.ObjectMeta{
@@ -56,14 +51,14 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 			},
 			Resources: memcached.Spec.Resources,
 		})
-		if isMonitoringCoreOSOperator(memcached) {
+		if memcached.GetMonitoringVendor() == mon_api.VendorPrometheus {
 			in.Spec.Template.Spec.Containers = core_util.UpsertContainer(in.Spec.Template.Spec.Containers, core.Container{
 				Name: "exporter",
-				Args: []string{
+				Args: append([]string{
 					"export",
 					fmt.Sprintf("--address=:%d", memcached.Spec.Monitor.Prometheus.Port),
-					"--v=3",
-				},
+					fmt.Sprintf("--analytics=%v", c.opt.EnableAnalytics),
+				}, c.opt.LoggerOptions.ToFlags()...),
 				Image:           c.opt.Docker.GetOperatorImageWithTag(memcached),
 				ImagePullPolicy: core.PullIfNotPresent,
 				Ports: []core.ContainerPort{
@@ -74,9 +69,6 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 					},
 				},
 			})
-			if c.opt.EnableRbac {
-				in.Spec.Template.Spec.ServiceAccountName = memcached.Name
-			}
 		}
 
 		in.Spec.Template.Spec.NodeSelector = memcached.Spec.NodeSelector

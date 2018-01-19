@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/appscode/go/log/golog"
 	v "github.com/appscode/go/version"
 	"github.com/appscode/kutil/tools/analytics"
 	"github.com/jpillora/go-ogle-analytics"
@@ -23,9 +24,6 @@ var (
 )
 
 func NewRootCmd(version string) *cobra.Command {
-	var (
-		enableAnalytics = true
-	)
 	var rootCmd = &cobra.Command{
 		Use:               "mc-operator",
 		DisableAutoGenTag: true,
@@ -33,7 +31,7 @@ func NewRootCmd(version string) *cobra.Command {
 			c.Flags().VisitAll(func(flag *pflag.Flag) {
 				log.Printf("FLAG: --%s=%q", flag.Name, flag.Value)
 			})
-			if enableAnalytics && gaTrackingCode != "" {
+			if opt.EnableAnalytics && gaTrackingCode != "" {
 				if client, err := ga.NewClient(gaTrackingCode); err == nil {
 					client.ClientID(analyticsClientID)
 					parts := strings.Split(c.CommandPath(), " ")
@@ -41,12 +39,13 @@ func NewRootCmd(version string) *cobra.Command {
 				}
 			}
 			scheme.AddToScheme(clientsetscheme.Scheme)
+			opt.LoggerOptions = golog.ParseFlags(c.Flags())
 		},
 	}
 	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
 	// ref: https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
 	flag.CommandLine.Parse([]string{})
-	rootCmd.PersistentFlags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical events to Google Analytics")
+	rootCmd.PersistentFlags().BoolVar(&opt.EnableAnalytics, "analytics", opt.EnableAnalytics, "Send analytical events to Google Analytics")
 
 	rootCmd.AddCommand(v.NewCmdVersion())
 	rootCmd.AddCommand(NewCmdRun(version))

@@ -89,13 +89,3 @@ func (c *Controller) manageMonitor(memcached *api.Memcached) error {
 	}
 	return nil
 }
-
-// check if the monitoring agent is "coreos-prometheus-operator"
-func isMonitoringCoreOSOperator(memcached *api.Memcached) bool {
-	if memcached.Spec.Monitor != nil &&
-		memcached.Spec.Monitor.Agent == api.AgentCoreosPrometheus &&
-		memcached.Spec.Monitor.Prometheus != nil {
-		return true
-	}
-	return false
-}

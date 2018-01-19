@@ -6,7 +6,7 @@ IMG=memcached
 TAG=1.5
 PATCH=1.5.4
 
-docker pull $IMG:$PATCH
+docker pull "$DOCKER_REGISTRY/$IMG:$PATCH"
 
 docker tag "$DOCKER_REGISTRY/$IMG:$PATCH" "$DOCKER_REGISTRY/$IMG:$TAG"
 docker push "$DOCKER_REGISTRY/$IMG:$TAG"

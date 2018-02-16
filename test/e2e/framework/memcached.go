@@ -87,7 +87,7 @@ func (f *Framework) CleanMemcached() {
 	}
 	for _, m := range memcachedList.Items {
 		util.PatchMemcached(f.extClient, &m, func(in *api.Memcached) *api.Memcached {
-			in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, "kubedb.com")
+			in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api.GenericKey)
 			return in
 		})
 	}

@@ -165,20 +165,20 @@ func (c *Controller) runMemcached(key string) error {
 		// is dependent on the actual instance, to detect that a Memcached was recreated with the same name
 		memcached := obj.(*api.Memcached).DeepCopy()
 		if memcached.DeletionTimestamp != nil {
-			if core_util.HasFinalizer(memcached.ObjectMeta, "kubedb.com") {
+			if core_util.HasFinalizer(memcached.ObjectMeta, api.GenericKey) {
 				if err := c.pause(memcached); err != nil {
 					log.Errorln(err)
 					return err
 				}
 				memcached, _, err = util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
-					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, "kubedb.com")
+					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api.GenericKey)
 					return in
 				})
 				return err
 			}
 		} else {
 			memcached, _, err = util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
-				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, "kubedb.com")
+				in.ObjectMeta = core_util.AddFinalizer(in.ObjectMeta, api.GenericKey)
 				return in
 			})
 			if err := c.create(memcached); err != nil {

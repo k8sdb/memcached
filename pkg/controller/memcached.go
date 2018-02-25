@@ -53,9 +53,10 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		return err
 	}
 	// set replica to at least 1
-	if memcached.Spec.Replicas < 1 {
+	if memcached.Spec.Replicas == nil {
 		mc, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
-			in.Spec.Replicas = 1
+			in.Spec.Replicas = new(int32)
+			*in.Spec.Replicas = 1
 			return in
 		})
 		if err != nil {

@@ -74,7 +74,7 @@ func (c *Controller) initWatcher() {
 func memcachedEqual(old, new *api.Memcached) bool {
 	if !meta_util.Equal(old.Spec, new.Spec) {
 		diff := meta_util.Diff(old.Spec, new.Spec)
-		log.Infoln("Memcached %s/%s has changed. Diff: %s", new.Namespace, new.Name, diff)
+		log.Infof("Memcached %s/%s has changed. Diff: %s", new.Namespace, new.Name, diff)
 		return false
 	}
 	return true

@@ -91,4 +91,10 @@ func (f *Framework) CleanMemcached() {
 			return in
 		})
 	}
+	deletePolicy := metav1.DeletePropagationForeground
+	if err := f.extClient.Memcacheds(f.namespace).DeleteCollection(&metav1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}, metav1.ListOptions{}); err != nil {
+		return
+	}
 }

@@ -31,7 +31,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 		in.Labels = core_util.UpsertMap(in.Labels, memcached.DeploymentLabels())
 		in.Annotations = core_util.UpsertMap(in.Annotations, memcached.DeploymentAnnotations())
 
-		in.Spec.Replicas = types.Int32P(memcached.Spec.Replicas)
+		in.Spec.Replicas = types.Int32P(*memcached.Spec.Replicas)
 		in.Spec.Template = core.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels: in.ObjectMeta.Labels,

@@ -52,23 +52,6 @@ func (c *Controller) create(memcached *api.Memcached) error {
 	if err := c.setMonitoringPort(memcached); err != nil {
 		return err
 	}
-	// set replica to at least 1
-	if memcached.Spec.Replicas < 1 {
-		mc, _, err := util.PatchMemcached(c.ExtClient, memcached, func(in *api.Memcached) *api.Memcached {
-			in.Spec.Replicas = 1
-			return in
-		})
-		if err != nil {
-			c.recorder.Eventf(
-				memcached.ObjectReference(),
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToUpdate,
-				err.Error(),
-			)
-			return err
-		}
-		memcached.Spec = mc.Spec
-	}
 
 	// Check DormantDatabase
 	if err := c.matchDormantDatabase(memcached); err != nil {

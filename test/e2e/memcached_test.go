@@ -75,7 +75,8 @@ var _ = Describe("Memcached", func() {
 			})
 			Context("Multiple Replica", func() {
 				BeforeEach(func() {
-					memcached.Spec.Replicas = 3
+					memcached.Spec.Replicas = new(int32)
+					*memcached.Spec.Replicas = 3
 				})
 				It("should run successfully", shouldSuccessfullyRunning)
 			})

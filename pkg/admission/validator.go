@@ -217,6 +217,5 @@ func preconditionFailedError(kind string) error {
 	apiVersion
 	kind
 	name
-	namespace
-	status`, strList}, "\n\t"))
+	namespace`, strList}, "\n\t"))
 }

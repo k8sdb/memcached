@@ -239,6 +239,9 @@ func editStatus(old api.Memcached) api.Memcached {
 func editSpecMonitor(old api.Memcached) api.Memcached {
 	old.Spec.Monitor = &kubeMon.AgentSpec{
 		Agent: kubeMon.AgentPrometheusBuiltin,
+		Prometheus: &kubeMon.PrometheusSpec{
+			Port: 5670,
+		},
 	}
 	return old
 }

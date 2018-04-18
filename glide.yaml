@@ -28,6 +28,8 @@ import:
   version: v1.9.0
 - package: github.com/appscode/kutil
   version: release-6.0
+- package: github.com/appscode/kubernetes-webhook-util
+  version: release-6.0
 - package: github.com/appscode/kube-mon
   version: release-6.0
 - package: github.com/hashicorp/go-version
@@ -38,3 +40,5 @@ import:
   version: v1.3.0
 - package: github.com/onsi/ginkgo
   version: v1.4.0
+- package: k8s.io/kube-aggregator
+  version: kubernetes-1.9.0

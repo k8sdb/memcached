@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/appscode/go/types"
 	kubeMon "github.com/appscode/kube-mon/api"
 	"github.com/appscode/kutil/meta"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
@@ -16,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	clientSetScheme "k8s.io/client-go/kubernetes/scheme"
-	"github.com/appscode/go/types"
 )
 
 func init() {
@@ -212,7 +212,7 @@ func sampleMemcached() api.Memcached {
 		},
 		Spec: api.MemcachedSpec{
 			Version:    "1.5.4",
-			Replicas: types.Int32P(3),
+			Replicas:   types.Int32P(3),
 			DoNotPause: true,
 		},
 	}

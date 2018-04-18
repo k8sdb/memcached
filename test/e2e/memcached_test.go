@@ -48,11 +48,12 @@ var _ = Describe("Memcached", func() {
 		})
 		Expect(err).NotTo(HaveOccurred())
 
-		By("Wait for memcached to be wipedOut")
-		f.EventuallyDormantDatabaseStatus(memcached.ObjectMeta).Should(matcher.HaveWipedOut())
-
+		By("Delete Dormant Database")
 		err = f.DeleteDormantDatabase(memcached.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
+
+		By("Wait for memcached resources to be wipedOut")
+		f.EventuallyWipedOut(memcached.ObjectMeta).Should(Succeed())
 	}
 
 	var shouldSuccessfullyRunning = func() {
@@ -83,76 +84,83 @@ var _ = Describe("Memcached", func() {
 
 		})
 
-		//Context("DoNotPause", func() {
-		//	BeforeEach(func() {
-		//		memcached.Spec.DoNotPause = true
-		//	})
-		//
-		//	It("should work successfully", func() {
-		//		// Create and wait for running Memcached
-		//		createAndWaitForRunning()
-		//
-		//		By("Delete memcached")
-		//		err = f.DeleteMemcached(memcached.ObjectMeta)
-		//		Expect(err).NotTo(HaveOccurred())
-		//
-		//		By("Memcached is not paused. Check for memcached")
-		//		f.EventuallyMemcached(memcached.ObjectMeta).Should(BeTrue())
-		//
-		//		By("Check for Running memcached")
-		//		f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
-		//
-		//		By("Update memcached to set DoNotPause=false")
-		//		f.TryPatchMemcached(memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
-		//			in.Spec.DoNotPause = false
-		//			return in
-		//		})
-		//
-		//		// Delete test resource
-		//		deleteTestResource()
-		//	})
-		//})
+		Context("DoNotPause", func() {
+			BeforeEach(func() {
+				memcached.Spec.DoNotPause = true
+			})
+
+			It("should work successfully", func() {
+				// Create and wait for running Memcached
+				createAndWaitForRunning()
+
+				By("Delete memcached")
+				err = f.DeleteMemcached(memcached.ObjectMeta)
+				Expect(err).Should(HaveOccurred())
+
+				By("Memcached is not paused. Check for memcached")
+				f.EventuallyMemcached(memcached.ObjectMeta).Should(BeTrue())
+
+				By("Check for Running memcached")
+				f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
+
+				By("Update memcached to set DoNotPause=false")
+				f.TryPatchMemcached(memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
+					in.Spec.DoNotPause = false
+					return in
+				})
+
+				// Delete test resource
+				deleteTestResource()
+			})
+		})
 
 		Context("Resume", func() {
 			var usedInitSpec bool
 			BeforeEach(func() {
 				usedInitSpec = false
 			})
+			Context("Super Fast User - Create-Delete-Create-Delete-Create ", func() {
+				It("should resume DormantDatabase successfully", func() {
+					// Create and wait for running Memcached
+					createAndWaitForRunning()
 
-			var shouldResumeSuccessfully = func() {
-				// Create and wait for running Memcached
-				createAndWaitForRunning()
+					By("Delete memcached")
+					err = f.DeleteMemcached(memcached.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
 
-				By("Delete memcached")
-				f.DeleteMemcached(memcached.ObjectMeta)
+					By("Wait for memcached to be paused")
+					f.EventuallyDormantDatabaseStatus(memcached.ObjectMeta).Should(matcher.HavePaused())
 
-				By("Wait for memcached to be paused")
-				f.EventuallyDormantDatabaseStatus(memcached.ObjectMeta).Should(matcher.HavePaused())
+					// Create Memcached object again to resume it
+					By("Create Memcached: " + memcached.Name)
+					err = f.CreateMemcached(memcached)
+					Expect(err).NotTo(HaveOccurred())
 
-				_, err = f.PatchDormantDatabase(memcached.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
-					in.Spec.Resume = true
-					return in
+					// Delete without caring if DB is resumed
+					By("Delete memcached")
+					err = f.DeleteMemcached(memcached.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Create Memcached object again to resume it
+					By("Create Memcached: " + memcached.Name)
+					err = f.CreateMemcached(memcached)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Wait for DormantDatabase to be deleted")
+					f.EventuallyDormantDatabase(memcached.ObjectMeta).Should(BeFalse())
+
+					By("Wait for Running memcached")
+					f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
+
+					_, err = f.GetMemcached(memcached.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Delete test resource
+					deleteTestResource()
 				})
-				Expect(err).NotTo(HaveOccurred())
-
-				By("Wait for DormantDatabase to be deleted")
-				f.EventuallyDormantDatabase(memcached.ObjectMeta).Should(BeFalse())
-
-				By("Wait for Running memcached")
-				f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
-
-				memcached, err = f.GetMemcached(memcached.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-
-				// Delete test resource
-				deleteTestResource()
-			}
-
-			Context("-", func() {
-				It("should resume DormantDatabase successfully", shouldResumeSuccessfully)
 			})
 
-			Context("With original Memcached", func() {
+			Context("-", func() {
 				It("should resume DormantDatabase successfully", func() {
 					// Create and wait for running Memcached
 					createAndWaitForRunning()
@@ -179,39 +187,38 @@ var _ = Describe("Memcached", func() {
 					// Delete test resource
 					deleteTestResource()
 				})
+			})
 
-				Context("Multiple times", func() {
+			Context("Multiple times", func() {
+				It("should resume DormantDatabase successfully", func() {
+					// Create and wait for running Memcached
+					createAndWaitForRunning()
 
-					It("should resume DormantDatabase successfully", func() {
-						// Create and wait for running Memcached
-						createAndWaitForRunning()
+					for i := 0; i < 3; i++ {
+						By(fmt.Sprintf("%v-th", i+1) + " time running.")
+						By("Delete memcached")
+						f.DeleteMemcached(memcached.ObjectMeta)
 
-						for i := 0; i < 3; i++ {
-							By(fmt.Sprintf("%v-th", i+1) + " time running.")
-							By("Delete memcached")
-							f.DeleteMemcached(memcached.ObjectMeta)
+						By("Wait for memcached to be paused")
+						f.EventuallyDormantDatabaseStatus(memcached.ObjectMeta).Should(matcher.HavePaused())
 
-							By("Wait for memcached to be paused")
-							f.EventuallyDormantDatabaseStatus(memcached.ObjectMeta).Should(matcher.HavePaused())
+						// Create Memcached object again to resume it
+						By("Create Memcached: " + memcached.Name)
+						err = f.CreateMemcached(memcached)
+						Expect(err).NotTo(HaveOccurred())
 
-							// Create Memcached object again to resume it
-							By("Create Memcached: " + memcached.Name)
-							err = f.CreateMemcached(memcached)
-							Expect(err).NotTo(HaveOccurred())
+						By("Wait for DormantDatabase to be deleted")
+						f.EventuallyDormantDatabase(memcached.ObjectMeta).Should(BeFalse())
 
-							By("Wait for DormantDatabase to be deleted")
-							f.EventuallyDormantDatabase(memcached.ObjectMeta).Should(BeFalse())
+						By("Wait for Running memcached")
+						f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
 
-							By("Wait for Running memcached")
-							f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
+						_, err := f.GetMemcached(memcached.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
+					}
 
-							_, err := f.GetMemcached(memcached.ObjectMeta)
-							Expect(err).NotTo(HaveOccurred())
-						}
-
-						// Delete test resource
-						deleteTestResource()
-					})
+					// Delete test resource
+					deleteTestResource()
 				})
 			})
 		})

@@ -1,11 +1,11 @@
 package framework
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/encoding/json/types"
-	core_util "github.com/appscode/kutil/core/v1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	. "github.com/onsi/gomega"
@@ -57,9 +57,8 @@ func (f *Framework) EventuallyMemcached(meta metav1.ObjectMeta) GomegaAsyncAsser
 			if err != nil {
 				if kerr.IsNotFound(err) {
 					return false
-				} else {
-					Expect(err).NotTo(HaveOccurred())
 				}
+				Expect(err).NotTo(HaveOccurred())
 			}
 			return true
 		},
@@ -85,16 +84,15 @@ func (f *Framework) CleanMemcached() {
 	if err != nil {
 		return
 	}
-	for _, m := range memcachedList.Items {
-		util.PatchMemcached(f.extClient, &m, func(in *api.Memcached) *api.Memcached {
-			in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api.GenericKey)
+	for _, e := range memcachedList.Items {
+		if _, _, err := util.PatchMemcached(f.extClient, &e, func(in *api.Memcached) *api.Memcached {
+			in.ObjectMeta.Finalizers = nil
 			return in
-		})
+		}); err != nil {
+			fmt.Printf("error Patching Memcached. error: %v", err)
+		}
 	}
-	deletePolicy := metav1.DeletePropagationForeground
-	if err := f.extClient.Memcacheds(f.namespace).DeleteCollection(&metav1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	}, metav1.ListOptions{}); err != nil {
-		return
+	if err := f.extClient.Memcacheds(f.namespace).DeleteCollection(deleteInBackground(), metav1.ListOptions{}); err != nil {
+		fmt.Printf("error in deletion of Memcached. Error: %v", err)
 	}
 }

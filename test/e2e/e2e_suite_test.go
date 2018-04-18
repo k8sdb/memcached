@@ -10,30 +10,33 @@ import (
 	"github.com/appscode/go/log"
 	logs "github.com/appscode/go/log/golog"
 	pcm "github.com/coreos/prometheus-operator/pkg/client/monitoring/v1"
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	"github.com/kubedb/apimachinery/client/clientset/versioned/scheme"
 	cs "github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1"
 	"github.com/kubedb/memcached/pkg/controller"
-	"github.com/kubedb/memcached/pkg/docker"
 	"github.com/kubedb/memcached/test/e2e/framework"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
-	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/client-go/kubernetes"
+	clientSetScheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
+	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
 
 var (
-	storageClass   string
-	dockerRegistry string
+	storageClass string
 
 	prometheusCrdGroup = pcm.Group
 	prometheusCrdKinds = pcm.DefaultCrdKinds
 )
 
 func init() {
+	scheme.AddToScheme(clientSetScheme.Scheme)
+
 	flag.StringVar(&storageClass, "storageclass", "standard", "Kubernetes StorageClass name")
-	flag.StringVar(&dockerRegistry, "docker-registry", "kubedb", "User provided docker repository")
+	flag.StringVar(&framework.DockerRegistry, "docker-registry", "kubedb", "User provided docker repository")
+	flag.StringVar(&framework.ExporterTag, "exporter-tag", "canary", "Tag of kubedb/operator used as exporter")
 }
 
 const (
@@ -47,6 +50,7 @@ var (
 
 func TestE2e(t *testing.T) {
 	logs.InitLogs()
+	defer logs.FlushLogs()
 	RegisterFailHandler(Fail)
 	SetDefaultEventuallyTimeout(TIMEOUT)
 
@@ -69,14 +73,13 @@ var _ = BeforeSuite(func() {
 
 	// Clients
 	kubeClient := kubernetes.NewForConfigOrDie(config)
-	apiExtKubeClient := crd_cs.NewForConfigOrDie(config)
 	extClient := cs.NewForConfigOrDie(config)
-	promClient, err := pcm.NewForConfig(&prometheusCrdKinds, prometheusCrdGroup, config)
+	kaClient := ka.NewForConfigOrDie(config)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	// Framework
-	root = framework.New(kubeClient, extClient, storageClass)
+	root = framework.New(config, kubeClient, extClient, kaClient, storageClass)
 
 	By("Using namespace " + root.Namespace())
 
@@ -84,28 +87,24 @@ var _ = BeforeSuite(func() {
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 
-	opt := controller.Options{
-		Docker: docker.Docker{
-			Registry: dockerRegistry,
-		},
-		OperatorNamespace: root.Namespace(),
-		GoverningService:  api.DatabaseNamePrefix,
-	}
+	stopCh := genericapiserver.SetupSignalHandler()
+	go root.RunOperatorAndServer(kubeconfigPath, stopCh)
 
-	// Controller
-	ctrl = controller.New(kubeClient, apiExtKubeClient, extClient, promClient, opt)
-	err = ctrl.Setup()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	ctrl.Run()
 	root.EventuallyCRD().Should(Succeed())
+	root.EventuallyAPIServiceReady().Should(Succeed())
 })
 
 var _ = AfterSuite(func() {
+
+	By("Cleanup Left Overs")
+
+	By("Delete Admission Controller Configs")
+	root.CleanAdmissionConfigs()
+	By("Delete left over Memcached objects")
 	root.CleanMemcached()
+	By("Delete left over Dormant Database objects")
 	root.CleanDormantDatabase()
+	By("Delete Namespace")
 	err := root.DeleteNamespace()
 	Expect(err).NotTo(HaveOccurred())
-	By("Deleted namespace")
 })

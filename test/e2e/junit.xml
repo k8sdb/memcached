@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="1" failures="1" time="47.16707595">
+  <testsuite tests="1" failures="0" time="139.97679715">
       <testcase name="Memcached Test General - should run successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
       <testcase name="Memcached Test General Multiple Replica should run successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>
-      <testcase name="Memcached Test DoNotPause should work successfully" classname="e2e Suite" time="30.962780099">
-          <failure type="Failure">/home/maruf/go/src/github.com/kubedb/memcached/test/e2e/memcached_test.go:92&#xA;Expected error:&#xA;    &lt;*errors.StatusError | 0xc420417830&gt;: {&#xA;        ErrStatus: {&#xA;            TypeMeta: {Kind: &#34;&#34;, APIVersion: &#34;&#34;},&#xA;            ListMeta: {SelfLink: &#34;&#34;, ResourceVersion: &#34;&#34;, Continue: &#34;&#34;},&#xA;            Status: &#34;Failure&#34;,&#xA;            Message: &#34;admission webhook \&#34;dormantdatabase.validators.kubedb.com\&#34; denied the request: the server could not find the requested resource (get snapshots.kubedb.com)&#34;,&#xA;            Reason: &#34;InternalError&#34;,&#xA;            Details: nil,&#xA;            Code: 500,&#xA;        },&#xA;    }&#xA;    admission webhook &#34;dormantdatabase.validators.kubedb.com&#34; denied the request: the server could not find the requested resource (get snapshots.kubedb.com)&#xA;not to have occurred&#xA;/home/maruf/go/src/github.com/kubedb/memcached/test/e2e/memcached_test.go:53</failure>
-          <system-out>[BeforeEach] Memcached&#xA;  /home/maruf/go/src/github.com/kubedb/memcached/test/e2e/memcached_test.go:21&#xA;[BeforeEach] DoNotPause&#xA;  /home/maruf/go/src/github.com/kubedb/memcached/test/e2e/memcached_test.go:88&#xA;[It] should work successfully&#xA;  /home/maruf/go/src/github.com/kubedb/memcached/test/e2e/memcached_test.go:92&#xA;�[1mSTEP�[0m: Create Memcached: memcached-c52jpz&#xA;�[1mSTEP�[0m: Wait for Running memcached&#xA;�[1mSTEP�[0m: Delete memcached&#xA;�[1mSTEP�[0m: Memcached is not paused. Check for memcached&#xA;�[1mSTEP�[0m: Check for Running memcached&#xA;�[1mSTEP�[0m: Update memcached to set DoNotPause=false&#xA;�[1mSTEP�[0m: Delete memcached&#xA;�[1mSTEP�[0m: Wait for memcached to be paused&#xA;�[1mSTEP�[0m: WipeOut memcached&#xA;�[1mSTEP�[0m: Delete Dormant Database&#xA;</system-out>
-      </testcase>
+      <testcase name="Memcached Test DoNotPause should work successfully" classname="e2e Suite" time="119.727111157"></testcase>
       <testcase name="Memcached Test Resume Super Fast User - Create-Delete-Create-Delete-Create  should resume DormantDatabase successfully" classname="e2e Suite" time="0">
           <skipped></skipped>
       </testcase>

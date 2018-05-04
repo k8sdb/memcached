@@ -84,7 +84,7 @@ var _ = Describe("Memcached", func() {
 
 		})
 
-		Context("DoNotPause", func() {
+		FContext("DoNotPause", func() {
 			BeforeEach(func() {
 				memcached.Spec.DoNotPause = true
 			})

@@ -32,6 +32,7 @@ func NewMemcachedServerOptions(out, errOut io.Writer) *MemcachedServerOptions {
 		StdErr:             errOut,
 	}
 	o.RecommendedOptions.Etcd = nil
+	o.RecommendedOptions.Admission = nil
 
 	return o
 }

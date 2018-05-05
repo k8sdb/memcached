@@ -1,5 +1,5 @@
-hash: 5b7add907c19c208ae7cdf88dae408e09b3a21aae6e8261a36da0d13ca277fef
-updated: 2018-05-04T09:59:28.816053537-07:00
+hash: bbe65cac321a0a5048ed0f06f990b7172f98951d67cc5276d32db83163452762
+updated: 2018-05-05T13:41:19.058104244-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -290,7 +290,7 @@ imports:
 - name: github.com/json-iterator/go
   version: 13f86432b882000a51c6e610c620974462691a97
 - name: github.com/kubedb/apimachinery
-  version: 06f741a3961f6f6c83b7a24fdfa5dff753c15444
+  version: 7722f91fb07234ee69f3889e5c6ed5c181b0a0a7
   subpackages:
   - apis/kubedb
   - apis/kubedb/v1alpha1
@@ -486,7 +486,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: db8ef494b6bdaf472489f97ad9c556e18c963444
+  version: bb395b674c9930450ea7243b3e3c8f43150f4c11
   subpackages:
   - gensupport
   - googleapi
@@ -634,7 +634,8 @@ imports:
   - third_party/forked/golang/json
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: 5ae41ac86efd753e2ba012f097b83a914b268236
+  version: 6fdedd7050e542dd8c23fdababac0237aedd7f9e
+  repo: https://github.com/tamalsaha/apiserver.git
   subpackages:
   - pkg/admission
   - pkg/admission/configuration

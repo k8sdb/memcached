@@ -79,7 +79,7 @@ func (f *Framework) RunOperatorAndServer(kubeconfigPath string, stopCh <-chan st
 	serverOpt.ExtraOptions.Docker.Registry = DockerRegistry
 	serverOpt.ExtraOptions.Docker.ExporterTag = ExporterTag
 
-	err := serverOpt.Run(stopCh)
+	err = serverOpt.Run(stopCh)
 	Expect(err).NotTo(HaveOccurred())
 }
 

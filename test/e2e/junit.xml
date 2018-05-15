@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-  <testsuite tests="2" failures="0" time="92.557276623">
-      <testcase name="Memcached Test General - should run successfully" classname="e2e Suite" time="69.462045341"></testcase>
-  </testsuite>

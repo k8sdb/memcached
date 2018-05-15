@@ -1,0 +1,56 @@
+resource_types:
+- name: pull-request
+  type: docker-image
+  source:
+    repository: tahsin/git-pull-resource
+    tag: latest
+
+resources:
+- name: memcached
+  type: git
+  source:
+    uri: https://github.com/kubedb/memcached
+    branch: concourse
+
+- name: pull-request
+  type: pull-request
+  source:
+    owner: kubedb
+    repo: memcached
+    org: appscode
+    access_token: ((access_token))
+
+jobs:
+- name: test-memcached
+  plan:
+  - get: memcached
+    trigger: true
+  - task: test-e2e
+    privileged: true
+    file: memcached/hack/concourse/task.yml
+    params:
+      TOKEN: ((digitaloceanToken))
+      DOCKER_USER: ((docker_user))
+      DOCKER_PASS: ((docker_pass))
+
+- name: test-memcached-pr
+  plan:
+  - get: pull-request
+    trigger: true
+  - put: pull-request
+    params: { path: pull-request, status: pending}
+  - task: test-e2e
+    privileged: true
+    file: pull-request/hack/concourse/task.yml
+    input_mapping:
+      memcached: pull-request
+    params:
+      TOKEN: ((digitaloceanToken))
+      DOCKER_USER: ((docker_user))
+      DOCKER_PASS: ((docker_pass))
+    on_success:
+      put: pull-request
+      params: { path: pull-request, status: success}
+    on_failure:
+      put: pull-request
+      params: {path: pull-request, status: failure}

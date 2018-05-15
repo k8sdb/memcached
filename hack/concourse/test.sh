@@ -81,7 +81,7 @@ pushd $GOPATH/src/github.com/kubedb/memcached
 ./hack/builddeps.sh
 export APPSCODE_ENV=dev
 export DOCKER_REGISTRY=kubedbci
-./hack/docker/mc-operator/setup.sh build
-./hack/docker/mc-operator/setup.sh push
+./hack/docker/mc-operator/make.sh build
+./hack/docker/mc-operator/make.sh push
 source ./hack/deploy/setup.sh --docker-registry=kubedbci
 ./hack/make.py test e2e --v=1 --selfhosted-operator=true

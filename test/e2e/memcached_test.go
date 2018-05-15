@@ -119,7 +119,7 @@ var _ = Describe("Memcached", func() {
 			BeforeEach(func() {
 				usedInitSpec = false
 			})
-			Context("Super Fast User - Create-Delete-Create-Delete-Create ", func() {
+			FContext("Super Fast User - Create-Delete-Create-Delete-Create ", func() {
 				It("should resume DormantDatabase successfully", func() {
 					// Create and wait for running Memcached
 					createAndWaitForRunning()

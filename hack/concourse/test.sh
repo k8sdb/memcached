@@ -22,14 +22,10 @@ curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/
   && mv onessl /usr/local/bin/
 
 #install pharmer
-mkdir -p $GOPATH/src/github.com/pharmer
-pushd $GOPATH/src/github.com/pharmer
-git clone https://github.com/pharmer/pharmer &> /dev/null
-cd pharmer
-go get -u golang.org/x/tools/cmd/goimports
-./hack/builddeps.sh &> /dev/null
-./hack/make.py &> /dev/null
-pharmer
+pushd /tmp
+curl -LO https://cdn.appscode.com/binaries/pharmer/0.1.0-rc.3/pharmer-linux-amd64
+chmod +x pharmer-linux-amd64
+mv pharmer-linux-amd64 /bin/pharmer
 popd
 
 function cleanup {
@@ -44,7 +40,7 @@ function cleanup {
     # delete docker image on exit
     curl -LO https://raw.githubusercontent.com/appscodelabs/libbuild/master/docker.py || true
     chmod +x docker.py || true
-    ./docker.py del_tag kubedbci rd-operator $CUSTOM_OPERATOR_TAG
+    ./docker.py del_tag kubedbci mc-operator $CUSTOM_OPERATOR_TAG
 }
 trap cleanup EXIT
 
@@ -69,7 +65,7 @@ pharmer create cluster $NAME --provider=digitalocean --zone=nyc1 --nodes=2gb=1 -
 pharmer apply $NAME
 pharmer use cluster $NAME
 #wait for cluster to be ready
-sleep 300
+sleep 120
 kubectl get nodes
 
 #copy memcached to $GOPATH

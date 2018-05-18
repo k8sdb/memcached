@@ -141,7 +141,7 @@ var _ = Describe("Memcached", func() {
 					err = f.DeleteMemcached(memcached.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
-					By("Wait for memcached object is deleted")
+					By("wait fot Memcached to be deleted")
 					f.EventuallyMemcached(memcached.ObjectMeta).Should(BeFalse())
 
 					// Create Memcached object again to resume it

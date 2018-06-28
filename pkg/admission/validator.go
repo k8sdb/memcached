@@ -132,7 +132,6 @@ func ValidateMemcached(client kubernetes.Interface, extClient kubedbv1alpha1.Kub
 		return fmt.Errorf(`KubeDB doesn't support Memcached version: %s`, string(memcached.Spec.Version))
 	}
 
-
 	if err := amv.ValidateEnvVar(memcached.Spec.Env, forbiddenEnvVars, api.ResourceKindMemcached); err != nil {
 		return err
 	}

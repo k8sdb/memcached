@@ -3,11 +3,14 @@ package e2e_test
 import (
 	"fmt"
 
+	exec_util "github.com/appscode/kutil/tools/exec"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	"github.com/kubedb/memcached/test/e2e/framework"
 	"github.com/kubedb/memcached/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	core "k8s.io/api/core/v1"
 )
 
 var _ = Describe("Memcached", func() {
@@ -224,6 +227,57 @@ var _ = Describe("Memcached", func() {
 					deleteTestResource()
 				})
 			})
+		})
+
+		Context("Environment Variables", func() {
+			AfterEach(func() {
+				deleteTestResource()
+			})
+			envList := []core.EnvVar{
+				{
+					Name:  "TEST_ENV",
+					Value: "kubedb-memcached-e2e",
+				},
+			}
+
+			Context("Allowed Envs", func() {
+				It("should run successfully with given Env", func() {
+					memcached.Spec.Env = envList
+					createAndWaitForRunning()
+
+					By("Checking pod started with given envs")
+					pod, err := f.GetPod(memcached.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
+
+					out, err := exec_util.ExecIntoPod(f.RestConfig(), pod, "env")
+					Expect(err).NotTo(HaveOccurred())
+					for _, env := range envList {
+						Expect(out).Should(ContainSubstring(env.Name + "=" + env.Value))
+					}
+
+				})
+			})
+
+			Context("Update Envs", func() {
+				It("should reject to update Env", func() {
+					memcached.Spec.Env = envList
+					createAndWaitForRunning()
+
+					By("Updating Envs")
+					_, _, err := util.PatchMemcached(f.ExtClient(), memcached, func(in *api.Memcached) *api.Memcached {
+						in.Spec.Env = []core.EnvVar{
+							{
+								Name:  "TEST_ENV",
+								Value: "patched",
+							},
+						}
+						return in
+					})
+
+					Expect(err).To(HaveOccurred())
+				})
+			})
+
 		})
 
 	})

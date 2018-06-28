@@ -44,6 +44,14 @@ func (f *Framework) Invoke() *Invocation {
 	}
 }
 
+func (fi *Invocation) ExtClient() cs.KubedbV1alpha1Interface {
+	return fi.extClient
+}
+
+func (fi *Invocation) RestConfig() *rest.Config {
+	return fi.restConfig
+}
+
 type Invocation struct {
 	*Framework
 	app string

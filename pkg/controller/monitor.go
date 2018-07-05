@@ -74,7 +74,7 @@ func (c *Controller) manageMonitor(memcached *api.Memcached) error {
 		if oldAgent != nil &&
 			oldAgent.GetType() != memcached.Spec.Monitor.Agent {
 			if _, err := oldAgent.Delete(memcached.StatsAccessor()); err != nil {
-				log.Error("error in deleting Prometheus agent:", err)
+				log.Error("error in deleting Prometheus agent. Reason: %s", err)
 			}
 		}
 		if _, err := c.addOrUpdateMonitor(memcached); err != nil {
@@ -83,7 +83,7 @@ func (c *Controller) manageMonitor(memcached *api.Memcached) error {
 		return c.setNewAgent(memcached)
 	} else if oldAgent != nil {
 		if _, err := oldAgent.Delete(memcached.StatsAccessor()); err != nil {
-			log.Error("error in deleting Prometheus agent:", err)
+			log.Error("error in deleting Prometheus agent. Reason: %s", err)
 		}
 	}
 	return nil

@@ -8,7 +8,7 @@ import:
   version: ccf8867cdb9e5bd099093e27cfdb5fecce15c90b
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/kubedb/apimachinery
-  version: master
+  version: custom-config
 - package: github.com/onsi/ginkgo
   version: v1.5.0
 - package: github.com/onsi/gomega

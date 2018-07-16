@@ -73,6 +73,13 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		return err
 	}
 
+	// ensure config parser
+	if memcached.Spec.ConfigSource != nil {
+		err := c.ensureConfigParser(memcached)
+		if err != nil {
+			return err
+		}
+	}
 	// ensure database Deployment
 	vt2, err := c.ensureDeployment(memcached)
 	if err != nil {

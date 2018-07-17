@@ -191,7 +191,7 @@ func upsertCustomConfig(deployment *apps.Deployment, memcached *api.Memcached) *
 							LocalObjectReference: core.LocalObjectReference{
 								Name: getConfigParserName(memcached),
 							},
-							DefaultMode: types.Int32P(0774),
+							DefaultMode: types.Int32P(0744),
 						},
 					},
 				}

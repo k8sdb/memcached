@@ -90,11 +90,10 @@ func getConfigParserName(mc *api.Memcached) string {
 }
 
 func getConfigParserScript() string {
-	return `
-#!/bin/sh
+	return `#!/bin/sh
 set -e
 
-cmd="docker-entrypoint.sh"
+cmd="/usr/local/bin/docker-entrypoint.sh"
 configFile="/usr/config/memcached.conf"
 
 # parseConfig parse the config file and convert it to argument to pass to memcached binary

@@ -3,9 +3,11 @@ package e2e_test
 import (
 	"fmt"
 
+	"github.com/appscode/go/crypto/rand"
 	exec_util "github.com/appscode/kutil/tools/exec"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
+	"github.com/kubedb/memcached/pkg/controller"
 	"github.com/kubedb/memcached/test/e2e/framework"
 	"github.com/kubedb/memcached/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
@@ -19,6 +21,7 @@ var _ = Describe("Memcached", func() {
 		f           *framework.Invocation
 		memcached   *api.Memcached
 		skipMessage string
+		testSvc     *core.Service
 	)
 
 	BeforeEach(func() {
@@ -27,16 +30,18 @@ var _ = Describe("Memcached", func() {
 		skipMessage = ""
 	})
 
-	var createAndWaitForRunning = func() {
-		By("Create Memcached: " + memcached.Name)
-		err = f.CreateMemcached(memcached)
-		Expect(err).NotTo(HaveOccurred())
+	JustBeforeEach(func() {
+		if skipMessage != "" {
+			Skip(skipMessage)
+		}
 
-		By("Wait for Running memcached")
-		f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
-	}
+		testSvc = f.GetTestService(memcached.ObjectMeta)
 
-	var deleteTestResource = func() {
+		By("Creating Service: " + testSvc.Name)
+		f.CreateService(testSvc)
+	})
+
+	AfterEach(func() {
 		By("Delete memcached")
 		err = f.DeleteMemcached(memcached.ObjectMeta)
 		Expect(err).NotTo(HaveOccurred())
@@ -57,32 +62,59 @@ var _ = Describe("Memcached", func() {
 
 		By("Wait for memcached resources to be wipedOut")
 		f.EventuallyWipedOut(memcached.ObjectMeta).Should(Succeed())
-	}
 
-	var shouldSuccessfullyRunning = func() {
-		if skipMessage != "" {
-			Skip(skipMessage)
-		}
-		// Create Memcached
-		createAndWaitForRunning()
+		By("Deleting Service: " + testSvc.Name)
+		f.DeleteService(testSvc.ObjectMeta)
+	})
 
-		// Delete test resource
-		deleteTestResource()
+	var createAndWaitForRunning = func() {
+		By("Create Memcached: " + memcached.Name)
+		err = f.CreateMemcached(memcached)
+		Expect(err).NotTo(HaveOccurred())
+
+		By("Wait for Running memcached")
+		f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
 	}
 
 	Describe("Test", func() {
 
 		Context("General", func() {
+			var (
+				key   string
+				value string
+			)
+			BeforeEach(func() {
+				key = rand.WithUniqSuffix("kubed-e2e")
+				value = rand.GenerateTokenWithLength(10)
+			})
 
 			Context("-", func() {
-				It("should run successfully", shouldSuccessfullyRunning)
+				It("should run successfully", func() {
+					createAndWaitForRunning()
+
+					By("Inserting item into database")
+					f.EventuallySetItem(memcached.ObjectMeta, key, value).Should(BeTrue())
+
+					By("Retrieving item from database")
+					f.EventuallyGetItem(memcached.ObjectMeta, key).Should(BeEquivalentTo(value))
+				})
 			})
+
 			Context("Multiple Replica", func() {
 				BeforeEach(func() {
 					memcached.Spec.Replicas = new(int32)
 					*memcached.Spec.Replicas = 3
 				})
-				It("should run successfully", shouldSuccessfullyRunning)
+
+				It("should run successfully", func() {
+					createAndWaitForRunning()
+
+					By("Inserting item into database")
+					f.EventuallySetItem(memcached.ObjectMeta, key, value).Should(BeTrue())
+
+					By("Retrieving item from database")
+					f.EventuallyGetItem(memcached.ObjectMeta, key).Should(BeEquivalentTo(value))
+				})
 			})
 
 		})
@@ -111,9 +143,6 @@ var _ = Describe("Memcached", func() {
 					in.Spec.DoNotPause = false
 					return in
 				})
-
-				// Delete test resource
-				deleteTestResource()
 			})
 		})
 
@@ -160,9 +189,6 @@ var _ = Describe("Memcached", func() {
 
 					_, err = f.GetMemcached(memcached.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
-
-					// Delete test resource
-					deleteTestResource()
 				})
 			})
 
@@ -190,8 +216,6 @@ var _ = Describe("Memcached", func() {
 					_, err = f.GetMemcached(memcached.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
-					// Delete test resource
-					deleteTestResource()
 				})
 			})
 
@@ -222,17 +246,11 @@ var _ = Describe("Memcached", func() {
 						_, err := f.GetMemcached(memcached.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 					}
-
-					// Delete test resource
-					deleteTestResource()
 				})
 			})
 		})
 
 		Context("Environment Variables", func() {
-			AfterEach(func() {
-				deleteTestResource()
-			})
 			envList := []core.EnvVar{
 				{
 					Name:  "TEST_ENV",
@@ -275,6 +293,75 @@ var _ = Describe("Memcached", func() {
 					})
 
 					Expect(err).To(HaveOccurred())
+				})
+			})
+
+		})
+
+		Context("Custom config", func() {
+
+			customConfigs := []framework.MemcdConfig{
+				{
+					Name:  "conn-limit",
+					Value: "510",
+					Alias: "max_connections",
+				},
+				{
+					Name:  "memory-limit",
+					Value: "134217728", // 128MB in bytes
+					Alias: "limit_maxbytes",
+				},
+			}
+
+			Context("from configMap", func() {
+				var (
+					userConfig *core.ConfigMap
+				)
+
+				BeforeEach(func() {
+					userConfig = f.GetCustomConfig(customConfigs)
+				})
+
+				AfterEach(func() {
+					By("Deleting configMap: " + userConfig.Name)
+					f.DeleteConfigMap(userConfig.ObjectMeta)
+				})
+
+				It("should set configuration provided in configMap", func() {
+					if skipMessage != "" {
+						Skip(skipMessage)
+					}
+
+					By("Creating configMap: " + userConfig.Name)
+					err := f.CreateConfigMap(userConfig)
+					Expect(err).NotTo(HaveOccurred())
+
+					memcached.Spec.ConfigSource = &core.VolumeSource{
+						ConfigMap: &core.ConfigMapVolumeSource{
+							LocalObjectReference: core.LocalObjectReference{
+								Name: userConfig.Name,
+							},
+						},
+					}
+
+					// Create Memcached
+					createAndWaitForRunning()
+
+					configParser := controller.GetConfigParserName(memcached)
+					By("Checking configMap: " + configParser + " has been created")
+					_, err = f.GetConfigMap(memcached.Namespace, configParser)
+					Expect(err).NotTo(HaveOccurred())
+
+					By("Checking database pod has mounted configSource volume")
+					f.EventuallyConfigSourceVolumeMounted(memcached.ObjectMeta).Should(BeTrue())
+
+					// TODO
+					// currently the memcached go client we have used, does not have Stats() method to get runtime configuration
+					// however, there is pending PR that add this method. when the PR will merge, we can complete the code bellow.
+					//By("Checking Memcached configured from provided custom configuration")
+					//for _, cfg := range customConfigs {
+					//	f.EventuallyMemcachedConfigs(memcached.ObjectMeta).Should(matcher.UseCustomConfig(cfg))
+					//}
 				})
 			})
 

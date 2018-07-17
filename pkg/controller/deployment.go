@@ -189,7 +189,7 @@ func upsertCustomConfig(deployment *apps.Deployment, memcached *api.Memcached) *
 					VolumeSource: core.VolumeSource{
 						ConfigMap: &core.ConfigMapVolumeSource{
 							LocalObjectReference: core.LocalObjectReference{
-								Name: getConfigParserName(memcached),
+								Name: GetConfigParserName(memcached),
 							},
 							DefaultMode: types.Int32P(0744),
 						},

@@ -49,7 +49,7 @@ func (c *Controller) ensureConfigParser(memcached *api.Memcached) error {
 }
 
 func (c *Controller) checkConfigParser(memcached *api.Memcached) error {
-	name := getConfigParserName(memcached)
+	name := GetConfigParserName(memcached)
 	configmap, err := c.Client.CoreV1().ConfigMaps(memcached.Namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
@@ -65,7 +65,7 @@ func (c *Controller) checkConfigParser(memcached *api.Memcached) error {
 
 func (c *Controller) createConfigParser(memcached *api.Memcached) (kutil.VerbType, error) {
 	meta := metav1.ObjectMeta{
-		Name:      getConfigParserName(memcached),
+		Name:      GetConfigParserName(memcached),
 		Namespace: memcached.Namespace,
 	}
 
@@ -85,7 +85,7 @@ func (c *Controller) createConfigParser(memcached *api.Memcached) (kutil.VerbTyp
 	return ok, err
 }
 
-func getConfigParserName(mc *api.Memcached) string {
+func GetConfigParserName(mc *api.Memcached) string {
 	return mc.OffshootName() + "-config-parser"
 }
 

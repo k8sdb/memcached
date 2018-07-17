@@ -1,5 +1,5 @@
 hash: 671b502165be44af6bdc53abcb0d987d7933ab493003849415e30e6d062d7e15
-updated: 2018-07-12T12:53:56.948567+06:00
+updated: 2018-07-17T12:56:43.240325237+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -101,6 +101,10 @@ imports:
   version: 3ac7bf7a47d159a033b107610db8a1b6575507a4
   subpackages:
   - quantile
+- name: github.com/bradfitz/gomemcache
+  version: bc664df9673713a0ccf26e3b55a673ec7301088b
+  subpackages:
+  - memcache
 - name: github.com/codegangsta/inject
   version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
 - name: github.com/codeskyblue/go-sh
@@ -511,7 +515,7 @@ imports:
   subpackages:
   - rate
 - name: google.golang.org/api
-  version: 1d2d9cc0ae74226e8076e2a87e211c8fea38a160
+  version: 0025a57598c017c1b9f7bc916c4fb8ae77315f9c
   subpackages:
   - gensupport
   - googleapi

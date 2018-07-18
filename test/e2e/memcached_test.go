@@ -308,7 +308,7 @@ var _ = Describe("Memcached", func() {
 				},
 				{
 					Name:  "memory-limit",
-					Value: "134217728", // 128MB in bytes
+					Value: "128", // MB
 					Alias: "limit_maxbytes",
 				},
 			}

@@ -7,7 +7,6 @@ import (
 	exec_util "github.com/appscode/kutil/tools/exec"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
-	"github.com/kubedb/memcached/pkg/controller"
 	"github.com/kubedb/memcached/test/e2e/framework"
 	"github.com/kubedb/memcached/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
@@ -346,11 +345,6 @@ var _ = Describe("Memcached", func() {
 
 					// Create Memcached
 					createAndWaitForRunning()
-
-					configParser := controller.GetConfigParserName(memcached)
-					By("Checking configMap: " + configParser + " has been created")
-					_, err = f.GetConfigMap(memcached.Namespace, configParser)
-					Expect(err).NotTo(HaveOccurred())
 
 					By("Checking database pod has mounted configSource volume")
 					f.EventuallyConfigSourceVolumeMounted(memcached.ObjectMeta).Should(BeTrue())

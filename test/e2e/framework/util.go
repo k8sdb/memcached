@@ -68,10 +68,6 @@ func (f *Invocation) CreateConfigMap(obj *core.ConfigMap) error {
 	return err
 }
 
-func (f *Invocation) GetConfigMap(namespace, name string) (*core.ConfigMap, error) {
-	return f.kubeClient.CoreV1().ConfigMaps(namespace).Get(name, metav1.GetOptions{})
-}
-
 func (f *Invocation) DeleteConfigMap(meta metav1.ObjectMeta) error {
 	err := f.kubeClient.CoreV1().ConfigMaps(meta.Namespace).Delete(meta.Name, deleteInForeground())
 	if !kerr.IsNotFound(err) {

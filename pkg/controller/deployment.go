@@ -2,9 +2,7 @@ package controller
 
 import (
 	"fmt"
-	"path/filepath"
 
-	"github.com/appscode/go/types"
 	mon_api "github.com/appscode/kube-mon/api"
 	"github.com/appscode/kutil"
 	app_util "github.com/appscode/kutil/apps/v1"
@@ -20,10 +18,6 @@ import (
 )
 
 const (
-	PARSER_SCRIPT_NAME             = "config-parser.sh"
-	PARSER_SCRIPT_VOLUME           = "config-parser"
-	PARSER_SCRIPT_VOLUME_MOUNTPATH = "/usr/config-parser/"
-	CONFIG_FILE_NAME               = "memcached.conf"
 	CONFIG_SOURCE_VOLUME           = "custom-config"
 	CONFIG_SOURCE_VOLUME_MOUNTPATH = "/usr/config/"
 )
@@ -159,15 +153,10 @@ func upsertUserEnv(deployment *apps.Deployment, memcached *api.Memcached) *apps.
 }
 
 // upsertCustomConfig insert custom configuration volume if provided.
-// it also insert a script to parse config parameters from provided memcached.conf file.
 func upsertCustomConfig(deployment *apps.Deployment, memcached *api.Memcached) *apps.Deployment {
 	if memcached.Spec.ConfigSource != nil {
 		for i, container := range deployment.Spec.Template.Spec.Containers {
 			if container.Name == api.ResourceSingularMemcached {
-				configParserVolumeMount := core.VolumeMount{
-					Name:      PARSER_SCRIPT_VOLUME,
-					MountPath: PARSER_SCRIPT_VOLUME_MOUNTPATH,
-				}
 
 				configSourceVolumeMount := core.VolumeMount{
 					Name:      CONFIG_SOURCE_VOLUME,
@@ -175,7 +164,6 @@ func upsertCustomConfig(deployment *apps.Deployment, memcached *api.Memcached) *
 				}
 
 				volumeMounts := container.VolumeMounts
-				volumeMounts = core_util.UpsertVolumeMount(volumeMounts, configParserVolumeMount)
 				volumeMounts = core_util.UpsertVolumeMount(volumeMounts, configSourceVolumeMount)
 				deployment.Spec.Template.Spec.Containers[i].VolumeMounts = volumeMounts
 
@@ -184,26 +172,9 @@ func upsertCustomConfig(deployment *apps.Deployment, memcached *api.Memcached) *
 					VolumeSource: *memcached.Spec.ConfigSource,
 				}
 
-				configParserVolume := core.Volume{
-					Name: PARSER_SCRIPT_VOLUME,
-					VolumeSource: core.VolumeSource{
-						ConfigMap: &core.ConfigMapVolumeSource{
-							LocalObjectReference: core.LocalObjectReference{
-								Name: GetConfigParserName(memcached),
-							},
-							DefaultMode: types.Int32P(0744),
-						},
-					},
-				}
-
 				volumes := deployment.Spec.Template.Spec.Volumes
 				volumes = core_util.UpsertVolume(volumes, configSourceVolume)
-				volumes = core_util.UpsertVolume(volumes, configParserVolume)
 				deployment.Spec.Template.Spec.Volumes = volumes
-
-				// add command to run parser script
-				// parser script will run docker-entrypoint.sh after parsing config file.
-				deployment.Spec.Template.Spec.Containers[i].Command = []string{filepath.Join(PARSER_SCRIPT_VOLUME_MOUNTPATH, PARSER_SCRIPT_NAME)}
 				break
 			}
 		}

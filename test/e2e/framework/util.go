@@ -89,6 +89,7 @@ func (f *Invocation) GetTestService(meta metav1.ObjectMeta) *core.Service {
 					Name:       "db",
 					Protocol:   core.ProtocolTCP,
 					Port:       11211,
+					NodePort:   32757,
 					TargetPort: intstr.FromString("db"),
 				},
 			},

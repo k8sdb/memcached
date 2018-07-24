@@ -70,7 +70,7 @@ func (f *Invocation) CreateConfigMap(obj *core.ConfigMap) error {
 
 func (f *Invocation) DeleteConfigMap(meta metav1.ObjectMeta) error {
 	err := f.kubeClient.CoreV1().ConfigMaps(meta.Namespace).Delete(meta.Name, deleteInForeground())
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
@@ -108,7 +108,7 @@ func (f *Invocation) CreateService(obj *core.Service) error {
 
 func (f *Invocation) DeleteService(meta metav1.ObjectMeta) error {
 	err := f.kubeClient.CoreV1().Services(meta.Namespace).Delete(meta.Name, deleteInForeground())
-	if !kerr.IsNotFound(err) {
+	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil

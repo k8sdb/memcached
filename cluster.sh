@@ -54,7 +54,6 @@ function pharmer_common() {
   # create cluster using pharmer
   pharmer create credential --from-file=creds/"$ClusterProvider".json --provider="$CredProvider" cred
   pharmer create cluster "$NAME" --provider="$ClusterProvider" --zone="$ZONE" --nodes="$NODE"=1 --credential-uid=cred --v=10 --kubernetes-version="$K8S_VERSION"
-  pharmer apply "$NAME" || true
   pharmer apply "$NAME"
   pharmer use cluster "$NAME"
   sleep 120

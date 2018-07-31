@@ -1,6 +1,19 @@
 #!/bin/sh
 set -e
 
+# Heavily based on systemd-memcached-wrapper
+# 2014 - Christos Trochalakis <yatiohi@idepolis.gr>
+#
+# Heavily based on start-memcached script by Jay Bonci
+# <jaybonci@debian.org>
+#
+# This script handles the parsing of the /etc/memcached.conf file
+# and was originally created for the Debian distribution.
+# Anyone may use this little script under the same terms as
+# memcached itself.
+#
+# ref: https://gist.github.com/tamalsaha/05a5a8993f2df82927da4e1ebadfacc9
+
 cmd="/usr/local/bin/docker-entrypoint.sh"
 configFile="/usr/config/memcached.conf"
 

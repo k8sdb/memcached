@@ -76,9 +76,9 @@ func (c *Controller) createService(memcached *api.Memcached) (kutil.VerbType, er
 
 	_, ok, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
-		in.Labels = memcached.OffshootLabels()
+		in.Labels = memcached.OffshootSelectors()
 		in.Spec.Ports = upsertServicePort(in, memcached)
-		in.Spec.Selector = memcached.OffshootLabels()
+		in.Spec.Selector = memcached.OffshootSelectors()
 		return in
 	})
 	return ok, err

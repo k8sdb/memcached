@@ -87,16 +87,18 @@ func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deploymen
 	}
 
 	return app_util.CreateOrPatchDeployment(c.Client, deploymentMeta, func(in *apps.Deployment) *apps.Deployment {
+		in.Labels = memcached.OffshootLabels()
+		in.Annotations = memcached.Spec.PodTemplate.Controller.Annotations
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
-		in.Labels = core_util.UpsertMap(in.Labels, memcached.DeploymentLabels())
-		in.Annotations = core_util.UpsertMap(in.Annotations, memcached.DeploymentAnnotations())
 
 		in.Spec.Replicas = memcached.Spec.Replicas
 		in.Spec.Template.Labels = in.Labels
 		in.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: in.Labels,
+			MatchLabels: memcached.OffshootSelectors(),
 		}
-
+		in.Spec.Template.Labels = memcached.OffshootSelectors()
+		in.Spec.Template.Annotations = memcached.Spec.PodTemplate.Annotations
+		in.Spec.Template.Spec.InitContainers = core_util.UpsertContainers(in.Spec.Template.Spec.InitContainers, memcached.Spec.PodTemplate.Spec.InitContainers)
 		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(in.Spec.Template.Spec.Containers, core.Container{
 			Name:            api.ResourceSingularMemcached,
 			Image:           c.docker.GetImageWithTag(memcached),
@@ -129,14 +131,19 @@ func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deploymen
 				},
 			})
 		}
-
-		in.Spec.Template.Spec.NodeSelector = memcached.Spec.NodeSelector
-		in.Spec.Template.Spec.Affinity = memcached.Spec.Affinity
-		in.Spec.Template.Spec.SchedulerName = memcached.Spec.SchedulerName
-		in.Spec.Template.Spec.Tolerations = memcached.Spec.Tolerations
-		in.Spec.Template.Spec.ImagePullSecrets = memcached.Spec.ImagePullSecrets
 		in = upsertUserEnv(in, memcached)
 		in = upsertCustomConfig(in, memcached)
+
+		in.Spec.Template.Spec.NodeSelector = memcached.Spec.PodTemplate.Spec.NodeSelector
+		in.Spec.Template.Spec.Affinity = memcached.Spec.PodTemplate.Spec.Affinity
+		if memcached.Spec.PodTemplate.Spec.SchedulerName != "" {
+			in.Spec.Template.Spec.SchedulerName = memcached.Spec.PodTemplate.Spec.SchedulerName
+		}
+		in.Spec.Template.Spec.Tolerations = memcached.Spec.PodTemplate.Spec.Tolerations
+		in.Spec.Template.Spec.ImagePullSecrets = memcached.Spec.PodTemplate.Spec.ImagePullSecrets
+		in.Spec.Template.Spec.PriorityClassName = memcached.Spec.PodTemplate.Spec.PriorityClassName
+		in.Spec.Template.Spec.Priority = memcached.Spec.PodTemplate.Spec.Priority
+		in.Spec.Template.Spec.SecurityContext = memcached.Spec.PodTemplate.Spec.SecurityContext
 		return in
 	})
 }

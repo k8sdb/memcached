@@ -76,9 +76,23 @@ func (c *Controller) createService(memcached *api.Memcached) (kutil.VerbType, er
 
 	_, ok, err := core_util.CreateOrPatchService(c.Client, meta, func(in *core.Service) *core.Service {
 		in.ObjectMeta = core_util.EnsureOwnerReference(in.ObjectMeta, ref)
-		in.Labels = memcached.OffshootSelectors()
-		in.Spec.Ports = upsertServicePort(in, memcached)
+		in.Labels = memcached.OffshootLabels()
+		in.Annotations = memcached.Spec.ServiceTemplate.Annotations
+
 		in.Spec.Selector = memcached.OffshootSelectors()
+		in.Spec.Ports = upsertServicePort(in, memcached)
+
+		if memcached.Spec.ServiceTemplate.Spec.ClusterIP != "" {
+			in.Spec.ClusterIP = memcached.Spec.ServiceTemplate.Spec.ClusterIP
+		}
+		if memcached.Spec.ServiceTemplate.Spec.Type != "" {
+			in.Spec.Type = memcached.Spec.ServiceTemplate.Spec.Type
+		}
+		in.Spec.ExternalIPs = memcached.Spec.ServiceTemplate.Spec.ExternalIPs
+		in.Spec.LoadBalancerIP = memcached.Spec.ServiceTemplate.Spec.LoadBalancerIP
+		in.Spec.LoadBalancerSourceRanges = memcached.Spec.ServiceTemplate.Spec.LoadBalancerSourceRanges
+		in.Spec.ExternalTrafficPolicy = memcached.Spec.ServiceTemplate.Spec.ExternalTrafficPolicy
+		in.Spec.HealthCheckNodePort = memcached.Spec.ServiceTemplate.Spec.HealthCheckNodePort
 		return in
 	})
 	return ok, err

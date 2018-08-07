@@ -35,7 +35,13 @@ func TestMemcachedValidator_Admit(t *testing.T) {
 			validator := MemcachedValidator{}
 
 			validator.initialized = true
-			validator.extClient = extFake.NewSimpleClientset()
+			validator.extClient = extFake.NewSimpleClientset(
+				&api.MemcachedVersion{
+					ObjectMeta: metaV1.ObjectMeta{
+						Name: "1.5.4",
+					},
+				},
+			)
 			validator.client = fake.NewSimpleClientset()
 
 			objJS, err := meta.MarshalToJson(&c.object, api.SchemeGroupVersion)

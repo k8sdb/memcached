@@ -92,7 +92,9 @@ func (c *Controller) createService(memcached *api.Memcached) (kutil.VerbType, er
 		in.Spec.LoadBalancerIP = memcached.Spec.ServiceTemplate.Spec.LoadBalancerIP
 		in.Spec.LoadBalancerSourceRanges = memcached.Spec.ServiceTemplate.Spec.LoadBalancerSourceRanges
 		in.Spec.ExternalTrafficPolicy = memcached.Spec.ServiceTemplate.Spec.ExternalTrafficPolicy
-		in.Spec.HealthCheckNodePort = memcached.Spec.ServiceTemplate.Spec.HealthCheckNodePort
+		if memcached.Spec.ServiceTemplate.Spec.HealthCheckNodePort > 0 {
+			in.Spec.HealthCheckNodePort = memcached.Spec.ServiceTemplate.Spec.HealthCheckNodePort
+		}
 		return in
 	})
 	return ok, err

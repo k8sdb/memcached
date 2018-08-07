@@ -12,20 +12,23 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	kerr "k8s.io/apimachinery/pkg/api/errors"
 )
 
 var _ = Describe("Memcached", func() {
 	var (
-		err         error
-		f           *framework.Invocation
-		memcached   *api.Memcached
-		skipMessage string
-		testSvc     *core.Service
+		err              error
+		f                *framework.Invocation
+		memcached        *api.Memcached
+		memcachedVersion *api.MemcachedVersion
+		skipMessage      string
+		testSvc          *core.Service
 	)
 
 	BeforeEach(func() {
 		f = root.Invoke()
 		memcached = f.Memcached()
+		memcachedVersion = f.MemcachedVersion()
 		skipMessage = ""
 	})
 
@@ -64,9 +67,18 @@ var _ = Describe("Memcached", func() {
 
 		By("Deleting Service: " + testSvc.Name)
 		f.DeleteService(testSvc.ObjectMeta)
+
+		err = f.DeleteMemcachedVersion(memcachedVersion.ObjectMeta)
+		if err != nil && !kerr.IsNotFound(err) {
+			Expect(err).NotTo(HaveOccurred())
+		}
 	})
 
 	var createAndWaitForRunning = func() {
+		By("Create MemcachedVersion: " + memcachedVersion.Name)
+		err = f.CreateMemcachedVersion(memcachedVersion)
+		Expect(err).NotTo(HaveOccurred())
+
 		By("Create Memcached: " + memcached.Name)
 		err = f.CreateMemcached(memcached)
 		Expect(err).NotTo(HaveOccurred())
@@ -259,7 +271,7 @@ var _ = Describe("Memcached", func() {
 
 			Context("Allowed Envs", func() {
 				It("should run successfully with given Env", func() {
-					memcached.Spec.Env = envList
+					memcached.Spec.PodTemplate.Spec.Env = envList
 					createAndWaitForRunning()
 
 					By("Checking pod started with given envs")
@@ -277,12 +289,12 @@ var _ = Describe("Memcached", func() {
 
 			Context("Update Envs", func() {
 				It("should reject to update Env", func() {
-					memcached.Spec.Env = envList
+					memcached.Spec.PodTemplate.Spec.Env = envList
 					createAndWaitForRunning()
 
 					By("Updating Envs")
 					_, _, err := util.PatchMemcached(f.ExtClient(), memcached, func(in *api.Memcached) *api.Memcached {
-						in.Spec.Env = []core.EnvVar{
+						in.Spec.PodTemplate.Spec.Env = []core.EnvVar{
 							{
 								Name:  "TEST_ENV",
 								Value: "patched",

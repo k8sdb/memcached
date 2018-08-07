@@ -23,7 +23,7 @@ func (f *Invocation) Memcached() *api.Memcached {
 			},
 		},
 		Spec: api.MemcachedSpec{
-			Version: types.StrYo("1.5.4"),
+			Version: types.StrYo(DBVersion),
 		},
 	}
 }

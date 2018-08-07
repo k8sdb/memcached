@@ -86,6 +86,11 @@ func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deploymen
 		return nil, kutil.VerbUnchanged, rerr
 	}
 
+	memcachedVersion, err := c.ExtClient.RedisVersions().Get(string(memcached.Spec.Version), metav1.GetOptions{})
+	if err != nil {
+		return nil, kutil.VerbUnchanged, err
+	}
+
 	return app_util.CreateOrPatchDeployment(c.Client, deploymentMeta, func(in *apps.Deployment) *apps.Deployment {
 		in.Labels = memcached.OffshootLabels()
 		in.Annotations = memcached.Spec.PodTemplate.Controller.Annotations
@@ -101,7 +106,7 @@ func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deploymen
 		in.Spec.Template.Spec.InitContainers = core_util.UpsertContainers(in.Spec.Template.Spec.InitContainers, memcached.Spec.PodTemplate.Spec.InitContainers)
 		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(in.Spec.Template.Spec.Containers, core.Container{
 			Name:            api.ResourceSingularMemcached,
-			Image:           c.docker.GetImageWithTag(memcached),
+			Image:           memcachedVersion.Spec.DB.Image,
 			ImagePullPolicy: core.PullIfNotPresent,
 			Ports: []core.ContainerPort{
 				{
@@ -120,7 +125,7 @@ func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deploymen
 					fmt.Sprintf("--address=:%d", memcached.Spec.Monitor.Prometheus.Port),
 					fmt.Sprintf("--enable-analytics=%v", c.EnableAnalytics),
 				}, c.LoggerOptions.ToFlags()...),
-				Image:           c.docker.GetOperatorImageWithTag(memcached),
+				Image:           memcachedVersion.Spec.Exporter.Image,
 				ImagePullPolicy: core.PullIfNotPresent,
 				Ports: []core.ContainerPort{
 					{

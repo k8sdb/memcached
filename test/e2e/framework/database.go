@@ -58,7 +58,9 @@ func (f *Framework) GetMemcacheClient(meta metav1.ObjectMeta) (*memcache.Client,
 	nodePort := strconv.Itoa(int(svc.Spec.Ports[0].NodePort))
 	address := fmt.Sprintf(clusterIP.String() + ":" + nodePort)
 
-	return memcache.New(address), nil
+	mc := memcache.New(address)
+	mc.Timeout = time.Second * 5 // Increase the client's timeout to 5 seconds
+	return mc, nil
 }
 
 func (f *Framework) EventuallySetItem(meta metav1.ObjectMeta, key, value string) GomegaAsyncAssertion {

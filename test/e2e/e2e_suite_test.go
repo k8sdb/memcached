@@ -35,7 +35,7 @@ var (
 func init() {
 	scheme.AddToScheme(clientSetScheme.Scheme)
 
-	flag.StringVar(&framework.DockerRegistry, "docker-registry", "kubedb", "User provided docker repository")
+	flag.StringVar(&framework.DockerRegistry, "docker-registry", "kubedbci", "User provided docker repository")
 	flag.StringVar(&framework.DBVersion, "mc-version", "1.5.4", "Memcached version")
 	flag.StringVar(&framework.ExporterTag, "exporter-tag", "canary", "Tag of kubedb/operator used as exporter")
 	flag.BoolVar(&framework.SelfHostedOperator, "selfhosted-operator", false, "Enable this for provided controller")

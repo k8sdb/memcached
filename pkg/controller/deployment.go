@@ -86,7 +86,7 @@ func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deploymen
 		return nil, kutil.VerbUnchanged, rerr
 	}
 
-	memcachedVersion, err := c.ExtClient.RedisVersions().Get(string(memcached.Spec.Version), metav1.GetOptions{})
+	memcachedVersion, err := c.ExtClient.MemcachedVersions().Get(string(memcached.Spec.Version), metav1.GetOptions{})
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}

@@ -61,16 +61,16 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 
 func (c *Controller) checkDeployment(memcached *api.Memcached) error {
 	// Deployment for Memcached database
-	dbName := memcached.OffshootName()
-	deployment, err := c.Client.AppsV1().Deployments(memcached.Namespace).Get(dbName, metav1.GetOptions{})
+	deployment, err := c.Client.AppsV1().Deployments(memcached.Namespace).Get(memcached.OffshootName(), metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
-	if deployment.Labels[api.LabelDatabaseKind] != api.ResourceKindMemcached || deployment.Labels[api.LabelDatabaseName] != dbName {
-		return fmt.Errorf(`intended deployment "%v" already exists`, dbName)
+	if deployment.Labels[api.LabelDatabaseKind] != api.ResourceKindMemcached ||
+		deployment.Labels[api.LabelDatabaseName] != memcached.Name {
+		return fmt.Errorf(`intended deployment "%v" already exists`, memcached.OffshootName())
 	}
 	return nil
 }

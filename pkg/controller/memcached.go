@@ -99,19 +99,6 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		}
 	}
 
-	if err := c.manageMonitor(memcached); err != nil {
-		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached); rerr == nil {
-			c.recorder.Eventf(
-				ref,
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToCreate,
-				"Failed to manage monitoring system. Reason: %v",
-				err,
-			)
-		}
-		log.Errorln(err)
-		return nil
-	}
 	mc, err := util.UpdateMemcachedStatus(c.ExtClient, memcached, func(in *api.MemcachedStatus) *api.MemcachedStatus {
 		in.Phase = api.DatabasePhaseRunning
 		return in
@@ -128,6 +115,35 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		return err
 	}
 	memcached.Status = mc.Status
+
+	// ensure StatsService for desired monitoring
+	if _, err := c.ensureStatsService(memcached); err != nil {
+		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached); rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToCreate,
+				"Failed to manage monitoring system. Reason: %v",
+				err,
+			)
+		}
+		log.Errorln(err)
+		return nil
+	}
+
+	if err := c.manageMonitor(memcached); err != nil {
+		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached); rerr == nil {
+			c.recorder.Eventf(
+				ref,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToCreate,
+				"Failed to manage monitoring system. Reason: %v",
+				err,
+			)
+		}
+		log.Errorln(err)
+		return nil
+	}
 
 	return nil
 }

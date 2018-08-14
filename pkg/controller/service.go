@@ -151,7 +151,7 @@ func (c *Controller) ensureStatsService(memcached *api.Memcached) (kutil.VerbTyp
 			ref,
 			core.EventTypeWarning,
 			eventer.EventReasonFailedToCreate,
-			"Failed to create Stats Service. Reason: %v",
+			"Failed to reconcile stats service. Reason: %v",
 			err,
 		)
 		return kutil.VerbUnchanged, err
@@ -160,7 +160,7 @@ func (c *Controller) ensureStatsService(memcached *api.Memcached) (kutil.VerbTyp
 			ref,
 			core.EventTypeNormal,
 			eventer.EventReasonSuccessful,
-			"Successfully %s Stats Service",
+			"Successfully %s stats service",
 			vt,
 		)
 	}

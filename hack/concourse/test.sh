@@ -22,9 +22,10 @@ pushd "$GOPATH"/src/github.com/$ORG_NAME/$REPO_NAME
 
 # build and push docker-image
 ./hack/builddeps.sh
+./hack/dev/update-docker.sh
 
-./hack/docker/$OPERATOR_NAME/make.sh build
-./hack/docker/$OPERATOR_NAME/make.sh push
+# uninstall any previous existing configuration
+./hack/deploy/setup.sh --uninstall --purge
 
 # run tests
 ./hack/deploy/setup.sh --docker-registry=kubedbci

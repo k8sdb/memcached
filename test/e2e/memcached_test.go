@@ -158,10 +158,7 @@ var _ = Describe("Memcached", func() {
 		})
 
 		Context("Resume", func() {
-			var usedInitSpec bool
-			BeforeEach(func() {
-				usedInitSpec = false
-			})
+
 			Context("Super Fast User - Create-Delete-Create-Delete-Create ", func() {
 				It("should resume DormantDatabase successfully", func() {
 					// Create and wait for running Memcached

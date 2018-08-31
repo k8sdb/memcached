@@ -5,6 +5,7 @@ GOPATH=$(go env GOPATH)
 export KUBEDB_DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
 export KUBEDB_NAMESPACE=${KUBEDB_NAMESPACE:-kube-system}
 export MINIKUBE=0
+export MINIKUBE_RUN=0
 export SELF_HOSTED=1
 export ARGS="" # Forward arguments to installer script
 
@@ -47,7 +48,7 @@ source "$REPO_ROOT/hack/libbuild/common/lib.sh"
 
 export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
 export APPSCODE_ENV=${APPSCODE_ENV:-prod}
-export KUBEDB_SCRIPT="curl -fsSL https://raw.githubusercontent.com/kubedb/cli/0.8.0-beta.3/"
+export KUBEDB_SCRIPT="curl -fsSL https://raw.githubusercontent.com/kubedb/cli/0.8.0/"
 
 show_help() {
   echo "setup.sh - setup kubedb operator"
@@ -56,8 +57,9 @@ show_help() {
   echo " "
   echo "options:"
   echo "-h, --help          show brief help"
-  echo "    --minikube      run operator in local and connect with minikube"
   echo "    --selfhosted    deploy operator cluster."
+  echo "    --minikube      setup configurations for minikube to run operator in localhost"
+  echo "    --run           run operator in localhost and connect with minikube. only works with --minikube flag"
 }
 
 while test $# -gt 0; do
@@ -67,10 +69,19 @@ while test $# -gt 0; do
       ARGS="$ARGS $1" # also show helps of "CLI repo" installer script
       shift
       ;;
+    --docker-registry*)
+      export KUBEDB_DOCKER_REGISTRY=$(echo $1 | sed -e 's/^[^=]*=//g')
+      ARGS="$ARGS $1"
+      shift
+      ;;
     --minikube)
       export APPSCODE_ENV=dev
       export MINIKUBE=1
       export SELF_HOSTED=0
+      shift
+      ;;
+    --run)
+      export MINIKUBE_RUN=1
       shift
       ;;
     --selfhosted)
@@ -109,6 +120,8 @@ if [ "$APPSCODE_ENV" = "dev" ]; then
 fi
 
 echo ""
+env | sort | grep -e KUBEDB* -e APPSCODE*
+echo ""
 
 if [ "$SELF_HOSTED" -eq 1 ]; then
   echo "${KUBEDB_SCRIPT}hack/deploy/kubedb.sh | bash -s -- --operator-name=mc-operator $ARGS"
@@ -116,17 +129,21 @@ if [ "$SELF_HOSTED" -eq 1 ]; then
 fi
 
 if [ "$MINIKUBE" -eq 1 ]; then
-  $REPO_ROOT/hack/make.py
   cat $CLI_ROOT/hack/deploy/validating-webhook.yaml | $ONESSL envsubst | kubectl apply -f -
   cat $CLI_ROOT/hack/deploy/mutating-webhook.yaml | $ONESSL envsubst | kubectl apply -f -
   cat $REPO_ROOT/hack/dev/apiregistration.yaml | $ONESSL envsubst | kubectl apply -f -
   # Following line may give error if DBVersions CRD already not created
   cat $CLI_ROOT/hack/deploy/kubedb-catalog/memcached.yaml | $ONESSL envsubst | kubectl apply -f - || true
-  mc-operator run --v=4 \
-    --secure-port=8443 \
-    --kubeconfig="$HOME/.kube/config" \
-    --authorization-kubeconfig="$HOME/.kube/config" \
-    --authentication-kubeconfig="$HOME/.kube/config"
+
+  if [ "$MINIKUBE_RUN" -eq 1 ]; then
+    $REPO_ROOT/hack/make.py
+    mc-operator run --v=4 \
+      --secure-port=8443 \
+      --enable-status-subresource=true \
+      --kubeconfig="$HOME/.kube/config" \
+      --authorization-kubeconfig="$HOME/.kube/config" \
+      --authentication-kubeconfig="$HOME/.kube/config"
+  fi
 fi
 
 if [ $(pwd) = "$CLI_ROOT" ]; then

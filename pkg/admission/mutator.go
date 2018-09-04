@@ -99,6 +99,10 @@ func setDefaultValues(client kubernetes.Interface, extClient cs.Interface, memca
 		return nil, fmt.Errorf(`object 'Version' is missing in '%v'`, memcached.Spec)
 	}
 
+	if memcached.Spec.TerminationPolicy == "" {
+		memcached.Spec.TerminationPolicy = api.TerminationPolicyPause
+	}
+
 	if memcached.Spec.Replicas == nil {
 		memcached.Spec.Replicas = types.Int32P(1)
 	}

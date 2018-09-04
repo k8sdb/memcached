@@ -121,6 +121,10 @@ func ValidateMemcached(client kubernetes.Interface, extClient kubedbv1alpha1.Kub
 		return fmt.Errorf(`object 'Version' is missing in '%v'`, memcached.Spec)
 	}
 
+	if memcached.Spec.TerminationPolicy == "" {
+		return fmt.Errorf(`'spec.terminationPolicy' is missing`)
+	}
+
 	// Check Memcached version validation
 	if _, err := extClient.MemcachedVersions().Get(string(memcached.Spec.Version), metav1.GetOptions{}); err != nil {
 		return err

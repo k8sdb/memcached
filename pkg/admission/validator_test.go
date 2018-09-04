@@ -220,6 +220,7 @@ func sampleMemcached() api.Memcached {
 			Version:    "1.5.4",
 			Replicas:   types.Int32P(3),
 			DoNotPause: true,
+			TerminationPolicy: api.TerminationPolicyPause,
 		},
 	}
 }

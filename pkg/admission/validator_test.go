@@ -10,6 +10,7 @@ import (
 	extFake "github.com/kubedb/apimachinery/client/clientset/versioned/fake"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/scheme"
 	admission "k8s.io/api/admission/v1beta1"
+	apps "k8s.io/api/apps/v1"
 	authenticationV1 "k8s.io/api/authentication/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -220,6 +221,9 @@ func sampleMemcached() api.Memcached {
 			Version:    "1.5.4",
 			Replicas:   types.Int32P(3),
 			DoNotPause: true,
+			UpdateStrategy: apps.DeploymentStrategy{
+				Type: apps.RollingUpdateStatefulSetStrategyType,
+			},
 			TerminationPolicy: api.TerminationPolicyPause,
 		},
 	}

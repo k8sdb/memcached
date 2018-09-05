@@ -121,10 +121,6 @@ func ValidateMemcached(client kubernetes.Interface, extClient kubedbv1alpha1.Kub
 		return fmt.Errorf(`object 'Version' is missing in '%v'`, memcached.Spec)
 	}
 
-	if memcached.Spec.TerminationPolicy == "" {
-		return fmt.Errorf(`'spec.terminationPolicy' is missing`)
-	}
-
 	// Check Memcached version validation
 	if _, err := extClient.MemcachedVersions().Get(string(memcached.Spec.Version), metav1.GetOptions{}); err != nil {
 		return err
@@ -136,6 +132,14 @@ func ValidateMemcached(client kubernetes.Interface, extClient kubedbv1alpha1.Kub
 
 	if memcached.Spec.Replicas == nil || *memcached.Spec.Replicas < 1 {
 		return fmt.Errorf(`spec.replicas "%v" invalid. Value must be atleast 1"`, memcached.Spec.Replicas)
+	}
+
+	if memcached.Spec.UpdateStrategy.Type == "" {
+		return fmt.Errorf(`'spec.updateStrategy.type' is missing`)
+	}
+
+	if memcached.Spec.TerminationPolicy == "" {
+		return fmt.Errorf(`'spec.terminationPolicy' is missing`)
 	}
 
 	monitorSpec := memcached.Spec.Monitor

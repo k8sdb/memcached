@@ -172,6 +172,7 @@ func matchWithDormantDatabase(extClient kubedbv1alpha1.KubedbV1alpha1Interface, 
 
 	// Check Origin Spec
 	drmnOriginSpec := dormantDb.Spec.Origin.Spec.Memcached
+	drmnOriginSpec.SetDefaults()
 	originalSpec := memcached.Spec
 
 	// Skip checking doNotPause

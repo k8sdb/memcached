@@ -12,7 +12,6 @@ import (
 	cs "github.com/kubedb/apimachinery/client/clientset/versioned"
 	"github.com/pkg/errors"
 	admission "k8s.io/api/admission/v1beta1"
-	apps "k8s.io/api/apps/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -103,24 +102,15 @@ func setDefaultValues(client kubernetes.Interface, extClient cs.Interface, memca
 	if memcached.Spec.Replicas == nil {
 		memcached.Spec.Replicas = types.Int32P(1)
 	}
+	memcached.SetDefaults()
 
 	if err := setDefaultsFromDormantDB(extClient, memcached); err != nil {
 		return nil, err
 	}
 
-	if memcached.Spec.UpdateStrategy.Type == "" {
-		memcached.Spec.UpdateStrategy.Type = apps.RollingUpdateStatefulSetStrategyType
-	}
-
-	if memcached.Spec.TerminationPolicy == "" {
-		memcached.Spec.TerminationPolicy = api.TerminationPolicyPause
-	}
-
 	// If monitoring spec is given without port,
 	// set default Listening port
 	setMonitoringPort(memcached)
-
-	memcached.Migrate()
 
 	return memcached, nil
 }
@@ -143,14 +133,7 @@ func setDefaultsFromDormantDB(extClient cs.Interface, memcached *api.Memcached) 
 
 	// Check Origin Spec
 	ddbOriginSpec := dormantDb.Spec.Origin.Spec.Memcached
-
-	if memcached.Spec.UpdateStrategy.Type == "" {
-		memcached.Spec.UpdateStrategy = ddbOriginSpec.UpdateStrategy
-	}
-
-	if memcached.Spec.TerminationPolicy == "" {
-		memcached.Spec.TerminationPolicy = ddbOriginSpec.TerminationPolicy
-	}
+	ddbOriginSpec.SetDefaults()
 
 	// If Monitoring Spec of new object is not given,
 	// Take Monitoring Settings from Dormant

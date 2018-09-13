@@ -50,8 +50,8 @@ while test $# -gt 0; do
 done
 
 dbversions=(
-  1.5
   1.5.4
+  1.5
 )
 
 exporters=(

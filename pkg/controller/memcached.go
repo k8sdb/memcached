@@ -32,6 +32,24 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		return nil // user error so just record error and don't retry.
 	}
 
+	// Check if memcachedVersion is deprecated.
+	// If deprecated, add event and return nil (stop processing.)
+	memcachedVersion, err := c.ExtClient.MongoDBVersions().Get(string(memcached.Spec.Version), metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	if memcachedVersion.Spec.Deprecated {
+		c.recorder.Eventf(
+			memcached,
+			core.EventTypeWarning,
+			eventer.EventReasonInvalid,
+			"DBVersion %v is deprecated. Skipped processing.",
+			memcachedVersion.Name,
+		)
+		log.Errorf("DBVersion %v is deprecated. Skipped processing.", memcachedVersion.Name)
+		return nil
+	}
+
 	// Delete Matching DormantDatabase if exists any
 	if err := c.deleteMatchingDormantDatabase(memcached); err != nil {
 		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached); rerr == nil {
@@ -174,8 +192,9 @@ func (c *Controller) terminate(memcached *api.Memcached) error {
 	// If TerminationPolicy is "wipeOut", delete everything (ie, PVCs,Secrets,Snapshots).
 	// If TerminationPolicy is "delete", delete PVCs and keep snapshots,secrets intact.
 	// In both these cases, don't create dormantdatabase
-	// recently No elements of memcached to wipe out.
-	// In future. if we add any secrets, handle here
+
+	// At this moment, No elements of memcached to wipe out.
+	// In future. if we add any secrets or other component, handle here
 
 	if memcached.Spec.Monitor != nil {
 		if _, err := c.deleteMonitor(memcached); err != nil {

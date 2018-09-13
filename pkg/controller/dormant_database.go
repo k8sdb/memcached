@@ -31,7 +31,8 @@ func (c *Controller) WaitUntilPaused(drmn *api.DormantDatabase) error {
 // WipeOutDatabase is an Interface of *amc.Controller.
 // It verifies and deletes secrets and other left overs of DBs except Snapshot and PVC.
 func (c *Controller) WipeOutDatabase(drmn *api.DormantDatabase) error {
-	// Nothing yet to wipeOut on memcached
+	// At this moment, No elements of memcached to wipe out.
+	// In future. if we add any secrets or other component, handle here
 	return nil
 }
 

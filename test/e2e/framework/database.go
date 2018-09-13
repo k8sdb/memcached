@@ -2,11 +2,10 @@ package framework
 
 import (
 	"fmt"
-	"net"
-	"strconv"
 	"strings"
 	"time"
 
+	"github.com/appscode/kutil/tools/portforward"
 	"github.com/bradfitz/gomemcache/memcache"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/memcached/pkg/controller"
@@ -29,36 +28,29 @@ func (f *Framework) GetDatabasePod(meta metav1.ObjectMeta) (*core.Pod, error) {
 }
 
 func (f *Framework) GetMemcacheClient(meta metav1.ObjectMeta) (*memcache.Client, error) {
-	clusterIP := net.IP{192, 168, 99, 100} //minikube ip
-
-	pod, err := f.GetDatabasePod(meta)
+	memcached, err := f.GetMemcached(meta)
 	if err != nil {
 		return nil, err
 	}
 
-	if pod.Spec.NodeName != "minikube" {
-		node, err := f.kubeClient.CoreV1().Nodes().Get(pod.Spec.NodeName, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		for _, addr := range node.Status.Addresses {
-			if addr.Type == core.NodeExternalIP {
-				clusterIP = net.ParseIP(addr.Address)
-				break
-			}
-		}
-	}
-
-	svc, err := f.kubeClient.CoreV1().Services(f.Namespace()).Get(meta.Name+"-test-svc", metav1.GetOptions{})
+	clientPod, err := f.GetDatabasePod(meta)
 	if err != nil {
 		return nil, err
 	}
 
-	nodePort := strconv.Itoa(int(svc.Spec.Ports[0].NodePort))
-	address := fmt.Sprintf(clusterIP.String() + ":" + nodePort)
+	f.tunnel = portforward.NewTunnel(
+		f.kubeClient.CoreV1().RESTClient(),
+		f.restConfig,
+		memcached.Namespace,
+		clientPod.Name,
+		11211,
+	)
 
-	mc := memcache.New(address)
+	if err := f.tunnel.ForwardPort(); err != nil {
+		return nil, err
+	}
+
+	mc := memcache.New(fmt.Sprintf("localhost:%v", f.tunnel.Local))
 	mc.Timeout = time.Second * 5 // Increase the client's timeout to 5 seconds
 	return mc, nil
 }
@@ -68,6 +60,8 @@ func (f *Framework) EventuallySetItem(meta metav1.ObjectMeta, key, value string)
 		func() bool {
 			client, err := f.GetMemcacheClient(meta)
 			Expect(err).NotTo(HaveOccurred())
+
+			defer f.tunnel.Close()
 
 			err = client.Set(&memcache.Item{Key: key, Value: []byte(value)})
 			if err != nil {
@@ -85,6 +79,8 @@ func (f *Framework) EventuallyGetItem(meta metav1.ObjectMeta, key string) Gomega
 		func() string {
 			client, err := f.GetMemcacheClient(meta)
 			Expect(err).NotTo(HaveOccurred())
+
+			defer f.tunnel.Close()
 
 			item, err := client.Get(key)
 			if err != nil {

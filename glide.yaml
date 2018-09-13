@@ -7,6 +7,10 @@ import:
 - package: github.com/coreos/prometheus-operator
   version: v0.23.2
 - package: github.com/jpillora/go-ogle-analytics
+- package: github.com/graymeta/stow
+  repo: https://github.com/appscode/stow.git
+  vcs: git
+  version: master
 - package: github.com/kubedb/apimachinery
   version: master
 - package: github.com/onsi/ginkgo

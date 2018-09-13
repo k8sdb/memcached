@@ -22,7 +22,6 @@ var _ = Describe("Memcached", func() {
 		memcached        *api.Memcached
 		memcachedVersion *api.MemcachedVersion
 		skipMessage      string
-		testSvc          *core.Service
 	)
 
 	BeforeEach(func() {
@@ -32,21 +31,16 @@ var _ = Describe("Memcached", func() {
 		skipMessage = ""
 	})
 
-	JustBeforeEach(func() {
-		if skipMessage != "" {
-			Skip(skipMessage)
-		}
-
-		testSvc = f.GetTestService(memcached.ObjectMeta)
-
-		By("Creating Service: " + testSvc.Name)
-		f.CreateService(testSvc)
-	})
-
 	AfterEach(func() {
 		By("Delete memcached")
 		err = f.DeleteMemcached(memcached.ObjectMeta)
-		Expect(err).NotTo(HaveOccurred())
+		if err != nil {
+			if kerr.IsNotFound(err) {
+				// MongoDB was not created. Hence, rest of cleanup is not necessary.
+				return
+			}
+			Expect(err).NotTo(HaveOccurred())
+		}
 
 		By("Wait for memcached to be paused")
 		f.EventuallyDormantDatabaseStatus(memcached.ObjectMeta).Should(matcher.HavePaused())
@@ -64,9 +58,6 @@ var _ = Describe("Memcached", func() {
 
 		By("Wait for memcached resources to be wipedOut")
 		f.EventuallyWipedOut(memcached.ObjectMeta).Should(Succeed())
-
-		By("Deleting Service: " + testSvc.Name)
-		f.DeleteService(testSvc.ObjectMeta)
 
 		err = f.DeleteMemcachedVersion(memcachedVersion.ObjectMeta)
 		if err != nil && !kerr.IsNotFound(err) {
@@ -258,7 +249,7 @@ var _ = Describe("Memcached", func() {
 			})
 		})
 
-		FContext("Termination Policy", func() {
+		Context("Termination Policy", func() {
 			var (
 				key   string
 				value string

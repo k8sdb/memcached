@@ -148,24 +148,34 @@ func (c *Controller) create(memcached *api.Memcached) error {
 	return nil
 }
 
-func (c *Controller) pause(memcached *api.Memcached) error {
-	if _, err := c.createDormantDatabase(memcached); err != nil {
-		if kerr.IsAlreadyExists(err) {
-			// if already exists, check if it is database of another Kind and return error in that case.
-			// If the Kind is same, we can safely assume that the DormantDB was not deleted in before,
-			// Probably because, User is more faster (create-delete-create-again-delete...) than operator!
-			// So reuse that DormantDB!
-			ddb, err := c.ExtClient.DormantDatabases(memcached.Namespace).Get(memcached.Name, metav1.GetOptions{})
-			if err != nil {
-				return err
+func (c *Controller) terminate(memcached *api.Memcached) error {
+	// If TerminationPolicy is "terminate", keep everything (ie, PVCs,Secrets,Snapshots) intact.
+	// In operator, create dormantdatabase
+	if memcached.Spec.TerminationPolicy == api.TerminationPolicyPause {
+
+		if _, err := c.createDormantDatabase(memcached); err != nil {
+			if kerr.IsAlreadyExists(err) {
+				// if already exists, check if it is database of another Kind and return error in that case.
+				// If the Kind is same, we can safely assume that the DormantDB was not deleted in before,
+				// Probably because, User is more faster (create-delete-create-again-delete...) than operator!
+				// So reuse that DormantDB!
+				ddb, err := c.ExtClient.DormantDatabases(memcached.Namespace).Get(memcached.Name, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+				if val, _ := meta_util.GetStringValue(ddb.Labels, api.LabelDatabaseKind); val != api.ResourceKindMemcached {
+					return fmt.Errorf(`DormantDatabase "%v" of kind %v already exists`, memcached.Name, val)
+				}
+			} else {
+				return fmt.Errorf(`failed to create DormantDatabase: "%v". Reason: %v`, memcached.Name, err)
 			}
-			if val, _ := meta_util.GetStringValue(ddb.Labels, api.LabelDatabaseKind); val != api.ResourceKindMemcached {
-				return fmt.Errorf(`DormantDatabase "%v" of kind %v already exists`, memcached.Name, val)
-			}
-		} else {
-			return fmt.Errorf(`failed to create DormantDatabase: "%v". Reason: %v`, memcached.Name, err)
 		}
 	}
+	// If TerminationPolicy is "wipeOut", delete everything (ie, PVCs,Secrets,Snapshots).
+	// If TerminationPolicy is "delete", delete PVCs and keep snapshots,secrets intact.
+	// In both these cases, don't create dormantdatabase
+	// recently No elements of memcached to wipe out.
+	// In future. if we add any secrets, handle here
 
 	if memcached.Spec.Monitor != nil {
 		if _, err := c.deleteMonitor(memcached); err != nil {

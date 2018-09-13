@@ -14,27 +14,23 @@ import (
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/reference"
 )
 
 func (c *Controller) create(memcached *api.Memcached) error {
 	if err := validator.ValidateMemcached(c.Client, c.ExtClient, memcached); err != nil {
-		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached); rerr == nil {
-			c.recorder.Event(
-				ref,
-				core.EventTypeWarning,
-				eventer.EventReasonInvalid,
-				err.Error(),
-			)
-		}
+		c.recorder.Event(
+			memcached,
+			core.EventTypeWarning,
+			eventer.EventReasonInvalid,
+			err.Error(),
+		)
 		log.Errorln(err)
 		return nil // user error so just record error and don't retry.
 	}
 
 	// Check if memcachedVersion is deprecated.
 	// If deprecated, add event and return nil (stop processing.)
-	memcachedVersion, err := c.ExtClient.MongoDBVersions().Get(string(memcached.Spec.Version), metav1.GetOptions{})
+	memcachedVersion, err := c.ExtClient.MemcachedVersions().Get(string(memcached.Spec.Version), metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -52,16 +48,14 @@ func (c *Controller) create(memcached *api.Memcached) error {
 
 	// Delete Matching DormantDatabase if exists any
 	if err := c.deleteMatchingDormantDatabase(memcached); err != nil {
-		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached); rerr == nil {
-			c.recorder.Eventf(
-				ref,
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToCreate,
-				`Failed to delete dormant Database : "%v". Reason: %v`,
-				memcached.Name,
-				err,
-			)
-		}
+		c.recorder.Eventf(
+			memcached,
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToCreate,
+			`Failed to delete dormant Database : "%v". Reason: %v`,
+			memcached.Name,
+			err,
+		)
 		return err
 	}
 
@@ -71,14 +65,12 @@ func (c *Controller) create(memcached *api.Memcached) error {
 			return in
 		}, api.EnableStatusSubresource)
 		if err != nil {
-			if ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached); rerr == nil {
-				c.recorder.Eventf(
-					ref,
-					core.EventTypeWarning,
-					eventer.EventReasonFailedToUpdate,
-					err.Error(),
-				)
-			}
+			c.recorder.Eventf(
+				memcached,
+				core.EventTypeWarning,
+				eventer.EventReasonFailedToUpdate,
+				err.Error(),
+			)
 			return err
 		}
 		memcached.Status = mc.Status
@@ -97,23 +89,19 @@ func (c *Controller) create(memcached *api.Memcached) error {
 	}
 
 	if vt1 == kutil.VerbCreated && vt2 == kutil.VerbCreated {
-		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached); rerr == nil {
-			c.recorder.Event(
-				ref,
-				core.EventTypeNormal,
-				eventer.EventReasonSuccessful,
-				"Successfully created Memcached",
-			)
-		}
+		c.recorder.Event(
+			memcached,
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessful,
+			"Successfully created Memcached",
+		)
 	} else if vt1 == kutil.VerbPatched || vt2 == kutil.VerbPatched {
-		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached); rerr == nil {
-			c.recorder.Event(
-				ref,
-				core.EventTypeNormal,
-				eventer.EventReasonSuccessful,
-				"Successfully patched Memcached",
-			)
-		}
+		c.recorder.Event(
+			memcached,
+			core.EventTypeNormal,
+			eventer.EventReasonSuccessful,
+			"Successfully patched Memcached",
+		)
 	}
 
 	mc, err := util.UpdateMemcachedStatus(c.ExtClient, memcached, func(in *api.MemcachedStatus) *api.MemcachedStatus {
@@ -122,43 +110,37 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		return in
 	}, api.EnableStatusSubresource)
 	if err != nil {
-		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached); rerr == nil {
-			c.recorder.Eventf(
-				ref,
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToUpdate,
-				err.Error(),
-			)
-		}
+		c.recorder.Eventf(
+			memcached,
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToUpdate,
+			err.Error(),
+		)
 		return err
 	}
 	memcached.Status = mc.Status
 
 	// ensure StatsService for desired monitoring
 	if _, err := c.ensureStatsService(memcached); err != nil {
-		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached); rerr == nil {
-			c.recorder.Eventf(
-				ref,
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToCreate,
-				"Failed to manage monitoring system. Reason: %v",
-				err,
-			)
-		}
+		c.recorder.Eventf(
+			memcached,
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToCreate,
+			"Failed to manage monitoring system. Reason: %v",
+			err,
+		)
 		log.Errorln(err)
 		return nil
 	}
 
 	if err := c.manageMonitor(memcached); err != nil {
-		if ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached); rerr == nil {
-			c.recorder.Eventf(
-				ref,
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToCreate,
-				"Failed to manage monitoring system. Reason: %v",
-				err,
-			)
-		}
+		c.recorder.Eventf(
+			memcached,
+			core.EventTypeWarning,
+			eventer.EventReasonFailedToCreate,
+			"Failed to manage monitoring system. Reason: %v",
+			err,
+		)
 		log.Errorln(err)
 		return nil
 	}

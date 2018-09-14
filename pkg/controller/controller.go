@@ -72,6 +72,7 @@ func (c *Controller) EnsureCustomResourceDefinitions() error {
 		api.Memcached{}.CustomResourceDefinition(),
 		api.MemcachedVersion{}.CustomResourceDefinition(),
 		api.DormantDatabase{}.CustomResourceDefinition(),
+		api.Snapshot{}.CustomResourceDefinition(),
 	}
 	return apiext_util.RegisterCRDs(c.ApiExtKubeClient, crds)
 }

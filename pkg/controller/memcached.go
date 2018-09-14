@@ -43,7 +43,7 @@ func (c *Controller) create(memcached *api.Memcached) error {
 			memcachedVersion.Name,
 		)
 		log.Errorf("Memcached %s/%s is using deprecated version %v. Skipped processing.",
-			memcached.Namespace, memcached.Namespace, memcachedVersion.Name)
+			memcached.Namespace, memcached.Name, memcachedVersion.Name)
 		return nil
 	}
 

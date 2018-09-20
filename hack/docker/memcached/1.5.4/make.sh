@@ -15,7 +15,7 @@ build() {
   pushd "$REPO_ROOT/hack/docker/memcached/$DB_VERSION"
 
   chmod +x start.sh
-  cmd="docker build -t $DOCKER_REGISTRY/$IMG:$TAG ."
+  cmd="docker build --pull -t $DOCKER_REGISTRY/$IMG:$TAG ."
   echo $cmd; $cmd
 
   popd

@@ -5,7 +5,8 @@ import (
 
 	"github.com/appscode/go/crypto/rand"
 	exec_util "github.com/appscode/kutil/tools/exec"
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	catalogapi "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
+	dbapi "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	"github.com/kubedb/memcached/test/e2e/framework"
 	"github.com/kubedb/memcached/test/e2e/matcher"
@@ -19,8 +20,8 @@ var _ = Describe("Memcached", func() {
 	var (
 		err              error
 		f                *framework.Invocation
-		memcached        *api.Memcached
-		memcachedVersion *api.MemcachedVersion
+		memcached        *dbapi.Memcached
+		memcachedVersion *catalogapi.MemcachedVersion
 		skipMessage      string
 	)
 
@@ -46,7 +47,7 @@ var _ = Describe("Memcached", func() {
 		f.EventuallyDormantDatabaseStatus(memcached.ObjectMeta).Should(matcher.HavePaused())
 
 		By("WipeOut memcached")
-		_, err := f.PatchDormantDatabase(memcached.ObjectMeta, func(in *api.DormantDatabase) *api.DormantDatabase {
+		_, err := f.PatchDormantDatabase(memcached.ObjectMeta, func(in *dbapi.DormantDatabase) *dbapi.DormantDatabase {
 			in.Spec.WipeOut = true
 			return in
 		})
@@ -141,7 +142,7 @@ var _ = Describe("Memcached", func() {
 				f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
 
 				By("Update memcached to set DoNotPause=false")
-				f.TryPatchMemcached(memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
+				f.TryPatchMemcached(memcached.ObjectMeta, func(in *dbapi.Memcached) *dbapi.Memcached {
 					in.Spec.DoNotPause = false
 					return in
 				})
@@ -310,7 +311,7 @@ var _ = Describe("Memcached", func() {
 
 			Context("with TerminationPolicyDelete", func() {
 				BeforeEach(func() {
-					memcached.Spec.TerminationPolicy = api.TerminationPolicyDelete
+					memcached.Spec.TerminationPolicy = dbapi.TerminationPolicyDelete
 				})
 
 				var shouldRunWithTerminationDelete = func() {
@@ -332,7 +333,7 @@ var _ = Describe("Memcached", func() {
 
 			Context("with TerminationPolicyWipeOut", func() {
 				BeforeEach(func() {
-					memcached.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
+					memcached.Spec.TerminationPolicy = dbapi.TerminationPolicyWipeOut
 				})
 
 				var shouldRunWithTerminationWipeOut = func() {
@@ -385,7 +386,7 @@ var _ = Describe("Memcached", func() {
 					createAndWaitForRunning()
 
 					By("Updating Envs")
-					_, _, err := util.PatchMemcached(f.ExtClient(), memcached, func(in *api.Memcached) *api.Memcached {
+					_, _, err := util.PatchMemcached(f.ExtClient().KubedbV1alpha1(), memcached, func(in *dbapi.Memcached) *dbapi.Memcached {
 						in.Spec.PodTemplate.Spec.Env = []core.EnvVar{
 							{
 								Name:  "TEST_ENV",

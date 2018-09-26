@@ -3,7 +3,7 @@ package framework
 import (
 	"fmt"
 
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	api "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,12 +28,12 @@ func (i *Invocation) MemcachedVersion() *api.MemcachedVersion {
 	}
 }
 func (f *Framework) CreateMemcachedVersion(obj *api.MemcachedVersion) error {
-	_, err := f.extClient.MemcachedVersions().Create(obj)
+	_, err := f.extClient.CatalogV1alpha1().MemcachedVersions().Create(obj)
 	if err != nil && !kerr.IsAlreadyExists(err) {
 		return err
 	}
 	return nil
 }
 func (f *Framework) DeleteMemcachedVersion(meta metav1.ObjectMeta) error {
-	return f.extClient.MemcachedVersions().Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.extClient.CatalogV1alpha1().MemcachedVersions().Delete(meta.Name, &metav1.DeleteOptions{})
 }

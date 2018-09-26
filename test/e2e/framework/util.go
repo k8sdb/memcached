@@ -4,18 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
-	"time"
 
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-)
-
-const (
-	updateRetryInterval = 10 * 1000 * 1000 * time.Nanosecond
-	maxAttempts         = 5
 )
 
 func deleteInBackground() *metav1.DeleteOptions {

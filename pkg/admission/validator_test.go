@@ -6,8 +6,8 @@ import (
 
 	"github.com/appscode/go/types"
 	"github.com/appscode/kutil/meta"
-	catalogapi "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
-	dbapi "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
+	catalog "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
+	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	extFake "github.com/kubedb/apimachinery/client/clientset/versioned/fake"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/scheme"
 	admission "k8s.io/api/admission/v1beta1"
@@ -26,9 +26,9 @@ func init() {
 }
 
 var requestKind = metaV1.GroupVersionKind{
-	Group:   dbapi.SchemeGroupVersion.Group,
-	Version: dbapi.SchemeGroupVersion.Version,
-	Kind:    dbapi.ResourceKindMemcached,
+	Group:   api.SchemeGroupVersion.Group,
+	Version: api.SchemeGroupVersion.Version,
+	Kind:    api.ResourceKindMemcached,
 }
 
 func TestMemcachedValidator_Admit(t *testing.T) {
@@ -38,7 +38,7 @@ func TestMemcachedValidator_Admit(t *testing.T) {
 
 			validator.initialized = true
 			validator.extClient = extFake.NewSimpleClientset(
-				&catalogapi.MemcachedVersion{
+				&catalog.MemcachedVersion{
 					ObjectMeta: metaV1.ObjectMeta{
 						Name: "1.5.4",
 					},
@@ -46,11 +46,11 @@ func TestMemcachedValidator_Admit(t *testing.T) {
 			)
 			validator.client = fake.NewSimpleClientset()
 
-			objJS, err := meta.MarshalToJson(&c.object, dbapi.SchemeGroupVersion)
+			objJS, err := meta.MarshalToJson(&c.object, api.SchemeGroupVersion)
 			if err != nil {
 				panic(err)
 			}
-			oldObjJS, err := meta.MarshalToJson(&c.oldObject, dbapi.SchemeGroupVersion)
+			oldObjJS, err := meta.MarshalToJson(&c.oldObject, api.SchemeGroupVersion)
 			if err != nil {
 				panic(err)
 			}
@@ -98,8 +98,8 @@ var cases = []struct {
 	objectName string
 	namespace  string
 	operation  admission.Operation
-	object     dbapi.Memcached
-	oldObject  dbapi.Memcached
+	object     api.Memcached
+	oldObject  api.Memcached
 	heatUp     bool
 	result     bool
 }{
@@ -109,7 +109,7 @@ var cases = []struct {
 		"default",
 		admission.Create,
 		sampleMemcached(),
-		dbapi.Memcached{},
+		api.Memcached{},
 		false,
 		true,
 	},
@@ -119,7 +119,7 @@ var cases = []struct {
 		"default",
 		admission.Create,
 		getAwkwardMemcached(),
-		dbapi.Memcached{},
+		api.Memcached{},
 		false,
 		false,
 	},
@@ -179,7 +179,7 @@ var cases = []struct {
 		"default",
 		admission.Delete,
 		sampleMemcached(),
-		dbapi.Memcached{},
+		api.Memcached{},
 		true,
 		false,
 	},
@@ -189,7 +189,7 @@ var cases = []struct {
 		"default",
 		admission.Delete,
 		editSpecDoNotPause(sampleMemcached()),
-		dbapi.Memcached{},
+		api.Memcached{},
 		true,
 		true,
 	},
@@ -198,57 +198,57 @@ var cases = []struct {
 		"foo",
 		"default",
 		admission.Delete,
-		dbapi.Memcached{},
-		dbapi.Memcached{},
+		api.Memcached{},
+		api.Memcached{},
 		false,
 		true,
 	},
 }
 
-func sampleMemcached() dbapi.Memcached {
-	return dbapi.Memcached{
+func sampleMemcached() api.Memcached {
+	return api.Memcached{
 		TypeMeta: metaV1.TypeMeta{
-			Kind:       dbapi.ResourceKindMemcached,
-			APIVersion: dbapi.SchemeGroupVersion.String(),
+			Kind:       api.ResourceKindMemcached,
+			APIVersion: api.SchemeGroupVersion.String(),
 		},
 		ObjectMeta: metaV1.ObjectMeta{
 			Name:      "foo",
 			Namespace: "default",
 			Labels: map[string]string{
-				dbapi.LabelDatabaseKind: dbapi.ResourceKindMemcached,
+				api.LabelDatabaseKind: api.ResourceKindMemcached,
 			},
 		},
-		Spec: dbapi.MemcachedSpec{
+		Spec: api.MemcachedSpec{
 			Version:    "1.5.4",
 			Replicas:   types.Int32P(3),
 			DoNotPause: true,
 			UpdateStrategy: apps.DeploymentStrategy{
 				Type: apps.RollingUpdateStatefulSetStrategyType,
 			},
-			TerminationPolicy: dbapi.TerminationPolicyPause,
+			TerminationPolicy: api.TerminationPolicyPause,
 		},
 	}
 }
 
-func getAwkwardMemcached() dbapi.Memcached {
+func getAwkwardMemcached() api.Memcached {
 	memcached := sampleMemcached()
 	memcached.Spec.Version = "3.0"
 	return memcached
 }
 
-func editSpecVersion(old dbapi.Memcached) dbapi.Memcached {
+func editSpecVersion(old api.Memcached) api.Memcached {
 	old.Spec.Version = "1.5.3"
 	return old
 }
 
-func editStatus(old dbapi.Memcached) dbapi.Memcached {
-	old.Status = dbapi.MemcachedStatus{
-		Phase: dbapi.DatabasePhaseCreating,
+func editStatus(old api.Memcached) api.Memcached {
+	old.Status = api.MemcachedStatus{
+		Phase: api.DatabasePhaseCreating,
 	}
 	return old
 }
 
-func editSpecMonitor(old dbapi.Memcached) dbapi.Memcached {
+func editSpecMonitor(old api.Memcached) api.Memcached {
 	old.Spec.Monitor = &mona.AgentSpec{
 		Agent: mona.AgentPrometheusBuiltin,
 		Prometheus: &mona.PrometheusSpec{
@@ -259,14 +259,14 @@ func editSpecMonitor(old dbapi.Memcached) dbapi.Memcached {
 }
 
 // should be failed because more fields required for COreOS Monitoring
-func editSpecInvalidMonitor(old dbapi.Memcached) dbapi.Memcached {
+func editSpecInvalidMonitor(old api.Memcached) api.Memcached {
 	old.Spec.Monitor = &mona.AgentSpec{
 		Agent: mona.AgentCoreOSPrometheus,
 	}
 	return old
 }
 
-func editSpecDoNotPause(old dbapi.Memcached) dbapi.Memcached {
+func editSpecDoNotPause(old api.Memcached) api.Memcached {
 	old.Spec.DoNotPause = false
 	return old
 }

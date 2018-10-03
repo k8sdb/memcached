@@ -122,9 +122,9 @@ var _ = Describe("Memcached", func() {
 
 		})
 
-		Context("DoNotPause", func() {
+		Context("DoNotTerminate", func() {
 			BeforeEach(func() {
-				memcached.Spec.DoNotPause = true
+				memcached.Spec.TerminationPolicy = api.TerminationPolicyDoNotTerminate
 			})
 
 			It("should work successfully", func() {
@@ -141,9 +141,9 @@ var _ = Describe("Memcached", func() {
 				By("Check for Running memcached")
 				f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
 
-				By("Update memcached to set DoNotPause=false")
+				By("Update memcached to set spec.terminationPolicy = Pause")
 				f.TryPatchMemcached(memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
-					in.Spec.DoNotPause = false
+					in.Spec.TerminationPolicy = api.TerminationPolicyPause
 					return in
 				})
 			})

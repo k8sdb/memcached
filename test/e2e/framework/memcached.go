@@ -87,7 +87,7 @@ func (f *Framework) CleanMemcached() {
 	for _, e := range memcachedList.Items {
 		if _, _, err := util.PatchMemcached(f.extClient.KubedbV1alpha1(), &e, func(in *api.Memcached) *api.Memcached {
 			in.ObjectMeta.Finalizers = nil
-			in.Spec.DoNotPause = false
+			in.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
 			return in
 		}); err != nil {
 			fmt.Printf("error Patching Memcached. error: %v", err)

@@ -163,17 +163,17 @@ var cases = []struct {
 		false,
 		false,
 	},
-	{"Edit Spec.DoNotPause",
+	{"Edit Spec.TerminationPolicy",
 		requestKind,
 		"foo",
 		"default",
 		admission.Update,
-		editSpecDoNotPause(sampleMemcached()),
+		pauseDatastore(sampleMemcached()),
 		sampleMemcached(),
 		false,
 		true,
 	},
-	{"Delete Memcached when Spec.DoNotPause=true",
+	{"Delete Memcached when Spec.TerminationPolicy=DoNotTerminate",
 		requestKind,
 		"foo",
 		"default",
@@ -183,12 +183,12 @@ var cases = []struct {
 		true,
 		false,
 	},
-	{"Delete Memcached when Spec.DoNotPause=false",
+	{"Delete Memcached when Spec.TerminationPolicy=Pause",
 		requestKind,
 		"foo",
 		"default",
 		admission.Delete,
-		editSpecDoNotPause(sampleMemcached()),
+		pauseDatastore(sampleMemcached()),
 		api.Memcached{},
 		true,
 		true,
@@ -219,13 +219,12 @@ func sampleMemcached() api.Memcached {
 			},
 		},
 		Spec: api.MemcachedSpec{
-			Version:    "1.5.4",
-			Replicas:   types.Int32P(3),
-			DoNotPause: true,
+			Version:  "1.5.4",
+			Replicas: types.Int32P(3),
 			UpdateStrategy: apps.DeploymentStrategy{
 				Type: apps.RollingUpdateStatefulSetStrategyType,
 			},
-			TerminationPolicy: api.TerminationPolicyPause,
+			TerminationPolicy: api.TerminationPolicyDoNotTerminate,
 		},
 	}
 }
@@ -266,7 +265,7 @@ func editSpecInvalidMonitor(old api.Memcached) api.Memcached {
 	return old
 }
 
-func editSpecDoNotPause(old api.Memcached) api.Memcached {
-	old.Spec.DoNotPause = false
+func pauseDatastore(old api.Memcached) api.Memcached {
+	old.Spec.TerminationPolicy = api.TerminationPolicyPause
 	return old
 }

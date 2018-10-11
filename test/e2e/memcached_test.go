@@ -122,33 +122,6 @@ var _ = Describe("Memcached", func() {
 
 		})
 
-		Context("DoNotTerminate", func() {
-			BeforeEach(func() {
-				memcached.Spec.TerminationPolicy = api.TerminationPolicyDoNotTerminate
-			})
-
-			It("should work successfully", func() {
-				// Create and wait for running Memcached
-				createAndWaitForRunning()
-
-				By("Delete memcached")
-				err = f.DeleteMemcached(memcached.ObjectMeta)
-				Expect(err).Should(HaveOccurred())
-
-				By("Memcached is not paused. Check for memcached")
-				f.EventuallyMemcached(memcached.ObjectMeta).Should(BeTrue())
-
-				By("Check for Running memcached")
-				f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
-
-				By("Update memcached to set spec.terminationPolicy = Pause")
-				f.TryPatchMemcached(memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
-					in.Spec.TerminationPolicy = api.TerminationPolicyPause
-					return in
-				})
-			})
-		})
-
 		Context("Resume", func() {
 
 			Context("Super Fast User - Create-Delete-Create-Delete-Create ", func() {
@@ -271,6 +244,33 @@ var _ = Describe("Memcached", func() {
 				f.EventuallyGetItem(memcached.ObjectMeta, key).Should(BeEquivalentTo(value))
 
 			}
+
+			Context("with TerminationPolicyDoNotTerminate", func() {
+				BeforeEach(func() {
+					memcached.Spec.TerminationPolicy = api.TerminationPolicyDoNotTerminate
+				})
+
+				It("should work successfully", func() {
+					// Create and wait for running Memcached
+					createAndWaitForRunning()
+
+					By("Delete memcached")
+					err = f.DeleteMemcached(memcached.ObjectMeta)
+					Expect(err).Should(HaveOccurred())
+
+					By("Memcached is not paused. Check for memcached")
+					f.EventuallyMemcached(memcached.ObjectMeta).Should(BeTrue())
+
+					By("Check for Running memcached")
+					f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
+
+					By("Update memcached to set spec.terminationPolicy = Pause")
+					f.TryPatchMemcached(memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
+						in.Spec.TerminationPolicy = api.TerminationPolicyPause
+						return in
+					})
+				})
+			})
 
 			Context("with TerminationPolicyPause (default)", func() {
 				var shouldRunWithTerminationPause = func() {

@@ -105,7 +105,7 @@ func (a *MemcachedValidator) Admit(req *admission.AdmissionRequest) *admission.A
 			}
 		}
 		// validate database specs
-		if err = ValidateMemcached(a.client, a.extClient, obj.(*api.Memcached)); err != nil {
+		if err = ValidateMemcached(a.client, a.extClient, obj.(*api.Memcached), false); err != nil {
 			return hookapi.StatusForbidden(err)
 		}
 	}
@@ -115,7 +115,7 @@ func (a *MemcachedValidator) Admit(req *admission.AdmissionRequest) *admission.A
 
 // ValidateMemcached checks if the object satisfies all the requirements.
 // It is not method of Interface, because it is referenced from controller package too.
-func ValidateMemcached(client kubernetes.Interface, extClient cs.Interface, memcached *api.Memcached) error {
+func ValidateMemcached(client kubernetes.Interface, extClient cs.Interface, memcached *api.Memcached, strictValidation bool) error {
 	if memcached.Spec.Version == "" {
 		return fmt.Errorf(`object 'Version' is missing in '%v'`, memcached.Spec)
 	}
@@ -123,6 +123,19 @@ func ValidateMemcached(client kubernetes.Interface, extClient cs.Interface, memc
 	// Check Memcached version validation
 	if _, err := extClient.CatalogV1alpha1().MemcachedVersions().Get(string(memcached.Spec.Version), metav1.GetOptions{}); err != nil {
 		return err
+	}
+
+	if strictValidation {
+		// Check if memcachedVersion is deprecated.
+		// If deprecated, return error
+		memcachedVersion, err := extClient.CatalogV1alpha1().MemcachedVersions().Get(string(memcached.Spec.Version), metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+		if memcachedVersion.Spec.Deprecated {
+			return fmt.Errorf("memcached %s/%s is using deprecated version %v. Skipped processing",
+				memcached.Namespace, memcached.Name, memcachedVersion.Name)
+		}
 	}
 
 	if err := amv.ValidateEnvVar(memcached.Spec.PodTemplate.Spec.Env, forbiddenEnvVars, api.ResourceKindMemcached); err != nil {

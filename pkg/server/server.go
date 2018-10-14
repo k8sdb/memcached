@@ -30,8 +30,7 @@ import (
 )
 
 const (
-	apiserviceName    = "v1alpha1.validators.kubedb.com"
-	validatingWebhook = "memcached.validators.kubedb.com"
+	apiserviceName = "v1alpha1.validators.kubedb.com"
 )
 
 var (
@@ -190,7 +189,7 @@ func (c completedConfig) New() (*MemcachedServer, error) {
 		s.GenericAPIServer.AddPostStartHookOrDie("validating-webhook-xray",
 			func(context genericapiserver.PostStartHookContext) error {
 				go func() {
-					xray := reg_util.NewCreateValidatingWebhookXray(c.OperatorConfig.ClientConfig, apiserviceName, validatingWebhook, &api.Memcached{
+					xray := reg_util.NewCreateValidatingWebhookXray(c.OperatorConfig.ClientConfig, apiserviceName, &api.Memcached{
 						TypeMeta: metav1.TypeMeta{
 							APIVersion: api.SchemeGroupVersion.String(),
 							Kind:       api.ResourceKindRedis,

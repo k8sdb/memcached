@@ -9,7 +9,6 @@ import (
 	"github.com/kubedb/apimachinery/apis"
 	cs "github.com/kubedb/apimachinery/client/clientset/versioned"
 	kubedbinformers "github.com/kubedb/apimachinery/client/informers/externalversions"
-	snapc "github.com/kubedb/apimachinery/pkg/controller/snapshot"
 	"github.com/kubedb/memcached/pkg/controller"
 	"github.com/spf13/pflag"
 	core "k8s.io/api/core/v1"
@@ -115,8 +114,6 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.OperatorConfig) error {
 	}
 	cfg.KubeInformerFactory = informers.NewSharedInformerFactory(cfg.KubeClient, cfg.ResyncPeriod)
 	cfg.KubedbInformerFactory = kubedbinformers.NewSharedInformerFactory(cfg.DBClient, cfg.ResyncPeriod)
-
-	cfg.CronController = snapc.NewCronController(cfg.KubeClient, cfg.DBClient)
 
 	return nil
 }

@@ -35,14 +35,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 	// Check Deployment Pod status
 	if vt != kutil.VerbUnchanged {
 		if err := app_util.WaitUntilDeploymentReady(c.Client, deployment.ObjectMeta); err != nil {
-			c.recorder.Eventf(
-				memcached,
-				core.EventTypeWarning,
-				eventer.EventReasonFailedToStart,
-				`Failed to CreateOrPatch StatefulSet. Reason: %v`,
-				err,
-			)
-			return kutil.VerbUnchanged, err
+			return kutil.VerbUnchanged, fmt.Errorf(`failed to Deployment StatefulSet. Reason: %v`, err)
 		}
 		c.recorder.Eventf(
 			memcached,

@@ -1,5 +1,5 @@
-hash: e95a1291d4c63155e7ff8cba61ba3c3ffb8298f3aa34c978687fafce90ed505f
-updated: 2018-11-13T12:07:48.080164988+06:00
+hash: 26d874777af051095ea4db181a8e4560e1dffab6183e65c0b45bd06813630e37
+updated: 2018-11-21T11:40:28.524061233+06:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -11,6 +11,7 @@ imports:
 - name: github.com/appscode/go
   version: a6d58457b39324ead2ffb1f24be7a0a638c9f112
   subpackages:
+  - analytics
   - arrays
   - context
   - crypto/rand
@@ -19,6 +20,7 @@ imports:
   - homedir
   - log
   - log/golog
+  - net
   - runtime
   - sets
   - strings
@@ -34,7 +36,7 @@ imports:
   - admission/v1beta1
   - registry/admissionreview/v1beta1
 - name: github.com/appscode/kutil
-  version: 3ea05651189cbff8994265360eb150d4c3513859
+  version: 68433ef84c41b2028786372f2a128932908f7124
   subpackages:
   - admissionregistration/v1beta1
   - apiextensions/v1beta1
@@ -44,6 +46,7 @@ imports:
   - discovery
   - dynamic
   - meta
+  - tools/analytics
   - tools/clientcmd
   - tools/exec
   - tools/portforward
@@ -277,7 +280,7 @@ imports:
 - name: github.com/google/btree
   version: 7d79101e329e5a3adf994758c578dab82b90c017
 - name: github.com/google/go-cmp
-  version: 745b8ec8378318d64f3f04949d010ee8d2fc71e2
+  version: 2248b49eaa8e1c8c0963ee77b40841adbc19d4ca
   subpackages:
   - cmp
   - cmp/internal/diff
@@ -340,7 +343,7 @@ imports:
 - name: github.com/json-iterator/go
   version: 1624edc4454b8682399def8740d46db5e4362ba4
 - name: github.com/kubedb/apimachinery
-  version: a307c803f3cea5ae7418ba24343b97057c13fb0c
+  version: 2a7cb21fc0d7604e31ae2149d5ee9097fe4340eb
   subpackages:
   - apis
   - apis/authorization
@@ -379,8 +382,6 @@ imports:
   - pkg/admission/snapshot
   - pkg/controller
   - pkg/controller/dormantdatabase
-  - pkg/controller/job
-  - pkg/controller/snapshot
   - pkg/eventer
   - pkg/validator
 - name: github.com/mailru/easyjson
@@ -443,8 +444,6 @@ imports:
   version: 4688ad28de2e88110c0ea30179c51b9b205f99be
 - name: github.com/openshift/origin
   version: fecffb2fce100260088a1b9f268c0901a778cf2b
-- name: github.com/orcaman/concurrent-map
-  version: b28018939af9022337862b94a463abb18abb3e0e
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/peterbourgon/diskv
@@ -611,10 +610,6 @@ imports:
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/natefinch/lumberjack.v2
   version: 20b71e5b60d756d3d2f80def009790325acc2b23
-- name: gopkg.in/robfig/cron.v2
-  version: ca60c6d796d4b1f7bb2a8fd5271d8a59aeffb4bf
-  repo: https://github.com/appscode/cron.git
-  vcs: git
 - name: gopkg.in/tomb.v1
   version: c131134a1947e9afd9cecfe11f4c6dff0732ae58
 - name: gopkg.in/yaml.v2
@@ -1028,7 +1023,7 @@ imports:
   - client/clientset/versioned/scheme
   - client/clientset/versioned/typed/appcatalog/v1alpha1
 - name: kmodules.xyz/monitoring-agent-api
-  version: 1153fe9fb110258b685ac5a718bc84c719a38b4a
+  version: c68fa034fbbaeb8c930c17d1ec0790a4ea46bad3
   repo: https://github.com/kmodules/monitoring-agent-api.git
   vcs: git
   subpackages:
@@ -1044,7 +1039,7 @@ imports:
   - api/v1
   - osm
 - name: kmodules.xyz/offshoot-api
-  version: 5fe79fb4d96949b8d85410ca8af200226a676aac
+  version: 2ab6d9decb219e8465875d80be5d6bc754052bd9
   repo: https://github.com/kmodules/offshoot-api.git
   vcs: git
   subpackages:

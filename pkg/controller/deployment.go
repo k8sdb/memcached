@@ -35,7 +35,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 	// Check Deployment Pod status
 	if vt != kutil.VerbUnchanged {
 		if err := app_util.WaitUntilDeploymentReady(c.Client, deployment.ObjectMeta); err != nil {
-			return kutil.VerbUnchanged, fmt.Errorf(`failed to Deployment StatefulSet. Reason: %v`, err)
+			return kutil.VerbUnchanged, err
 		}
 		c.recorder.Eventf(
 			memcached,
@@ -59,7 +59,7 @@ func (c *Controller) checkDeployment(memcached *api.Memcached) error {
 	}
 	if deployment.Labels[api.LabelDatabaseKind] != api.ResourceKindMemcached ||
 		deployment.Labels[api.LabelDatabaseName] != memcached.Name {
-		return fmt.Errorf(`intended deployment "%v" already exists`, memcached.OffshootName())
+		return fmt.Errorf(`intended deployment "%v/%v" already exists`, memcached.Namespace, memcached.OffshootName())
 	}
 	return nil
 }

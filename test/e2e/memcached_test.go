@@ -77,6 +77,13 @@ var _ = Describe("Memcached", func() {
 
 		By("Wait for Running memcached")
 		f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
+
+		By("Wait for AppBinding to create")
+		f.EventuallyAppBinding(memcached.ObjectMeta).Should(BeTrue())
+
+		By("Check valid AppBinding Specs")
+		err := f.CheckAppBindingSpec(memcached.ObjectMeta)
+		Expect(err).NotTo(HaveOccurred())
 	}
 
 	Describe("Test", func() {
@@ -170,7 +177,8 @@ var _ = Describe("Memcached", func() {
 					// Create and wait for running Memcached
 					createAndWaitForRunning()
 					By("Delete memcached")
-					f.DeleteMemcached(memcached.ObjectMeta)
+					err := f.DeleteMemcached(memcached.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for memcached to be paused")
 					f.EventuallyDormantDatabaseStatus(memcached.ObjectMeta).Should(matcher.HavePaused())
@@ -200,7 +208,8 @@ var _ = Describe("Memcached", func() {
 					for i := 0; i < 3; i++ {
 						By(fmt.Sprintf("%v-th", i+1) + " time running.")
 						By("Delete memcached")
-						f.DeleteMemcached(memcached.ObjectMeta)
+						err := f.DeleteMemcached(memcached.ObjectMeta)
+						Expect(err).NotTo(HaveOccurred())
 
 						By("Wait for memcached to be paused")
 						f.EventuallyDormantDatabaseStatus(memcached.ObjectMeta).Should(matcher.HavePaused())
@@ -216,7 +225,7 @@ var _ = Describe("Memcached", func() {
 						By("Wait for Running memcached")
 						f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
 
-						_, err := f.GetMemcached(memcached.ObjectMeta)
+						_, err = f.GetMemcached(memcached.ObjectMeta)
 						Expect(err).NotTo(HaveOccurred())
 					}
 				})
@@ -265,10 +274,11 @@ var _ = Describe("Memcached", func() {
 					f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
 
 					By("Update memcached to set spec.terminationPolicy = Pause")
-					f.TryPatchMemcached(memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
+					_, err := f.TryPatchMemcached(memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
 						in.Spec.TerminationPolicy = api.TerminationPolicyPause
 						return in
 					})
+					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 
@@ -428,7 +438,8 @@ var _ = Describe("Memcached", func() {
 
 				AfterEach(func() {
 					By("Deleting configMap: " + userConfig.Name)
-					f.DeleteConfigMap(userConfig.ObjectMeta)
+					err := f.DeleteConfigMap(userConfig.ObjectMeta)
+					Expect(err).NotTo(HaveOccurred())
 				})
 
 				It("should set configuration provided in configMap", func() {

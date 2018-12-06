@@ -1,5 +1,5 @@
-hash: a07160aef5682f518e3632049898f0154a034c1d6da0fdea263e735e4e470a45
-updated: 2018-12-05T10:35:20.290361743-08:00
+hash: b389a9dd53f2e3ee3d4a8b89db350218eb51582374cb8bb62593dbbc810dc95d
+updated: 2018-12-05T16:20:10.547997847-08:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -347,7 +347,7 @@ imports:
 - name: github.com/json-iterator/go
   version: 1624edc4454b8682399def8740d46db5e4362ba4
 - name: github.com/kubedb/apimachinery
-  version: edf77e9609ff15a2ad16582deda49eef5a0b80f4
+  version: 754de4d03075c5b1861f57ed2fc08e4f0ecd34e0
   subpackages:
   - apis
   - apis/authorization
@@ -612,6 +612,8 @@ imports:
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/natefinch/lumberjack.v2
   version: 20b71e5b60d756d3d2f80def009790325acc2b23
+- name: gopkg.in/square/go-jose.v2
+  version: f61ac651e23224d43848a8dc387dee016d7eacf9
 - name: gopkg.in/tomb.v1
   version: c131134a1947e9afd9cecfe11f4c6dff0732ae58
 - name: gopkg.in/yaml.v2
@@ -1026,7 +1028,7 @@ imports:
   - client/clientset/versioned/typed/appcatalog/v1alpha1
   - client/clientset/versioned/typed/appcatalog/v1alpha1/util
 - name: kmodules.xyz/monitoring-agent-api
-  version: c68fa034fbbaeb8c930c17d1ec0790a4ea46bad3
+  version: d12289267b3d7510feb9fac1f5e451d476f23a38
   repo: https://github.com/kmodules/monitoring-agent-api.git
   vcs: git
   subpackages:

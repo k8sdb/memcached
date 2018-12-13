@@ -78,7 +78,7 @@ import:
 - package: k8s.io/kube-openapi
   version: 0cf8f7e6ed1d2e3d47d02e3b6e559369af24d803
 - package: github.com/golang/protobuf
-  version: v1.1.0
+  version: v1.0.0
 - package: kmodules.xyz/custom-resources
   repo: https://github.com/kmodules/custom-resources.git
   vcs: git
@@ -94,4 +94,6 @@ import:
 - package: github.com/gorilla/websocket
   version: v1.4.0
 - package: gopkg.in/square/go-jose.v2
-  version: v2.2.0
+  version: v2.2.1
+- package: github.com/imdario/mergo
+  version: v0.3.5

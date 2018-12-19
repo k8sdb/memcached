@@ -36,7 +36,7 @@ func (c *Controller) ensureAppBinding(db *api.Memcached) (kutil.VerbType, error)
 			Name: db.ServiceName(),
 			Port: defaultDBPort.Port,
 		}
-		in.Spec.ClientConfig.InsecureSkipTLSVerify = true
+		in.Spec.ClientConfig.InsecureSkipTLSVerify = false
 
 		return in
 	})

@@ -391,7 +391,7 @@ var _ = Describe("Memcached", func() {
 			})
 
 			Context("Update Envs", func() {
-				It("should reject to update Env", func() {
+				It("should not reject to update Env", func() {
 					memcached.Spec.PodTemplate.Spec.Env = envList
 					createAndWaitForRunning()
 
@@ -405,8 +405,7 @@ var _ = Describe("Memcached", func() {
 						}
 						return in
 					})
-
-					Expect(err).To(HaveOccurred())
+					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 

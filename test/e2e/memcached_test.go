@@ -381,7 +381,7 @@ var _ = Describe("Memcached", func() {
 					pod, err := f.GetPod(memcached.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 
-					out, err := exec_util.ExecIntoPod(f.RestConfig(), pod, "env")
+					out, err := exec_util.ExecIntoPod(f.RestConfig(), pod, exec_util.Command("env"))
 					Expect(err).NotTo(HaveOccurred())
 					for _, env := range envList {
 						Expect(out).Should(ContainSubstring(env.Name + "=" + env.Value))

@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	logs "github.com/appscode/go/log/golog"
 	"github.com/kubedb/memcached/pkg/cmds"
+	"kmodules.xyz/client-go/logs"
 )
 
 func main() {

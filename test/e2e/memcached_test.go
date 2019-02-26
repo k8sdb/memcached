@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/crypto/rand"
-	exec_util "github.com/appscode/kutil/tools/exec"
 	catalog "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
@@ -14,6 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	exec_util "kmodules.xyz/client-go/tools/exec"
 )
 
 var _ = Describe("Memcached", func() {

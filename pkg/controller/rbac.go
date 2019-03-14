@@ -10,12 +10,11 @@ import (
 	clientsetscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/reference"
 	core_util "kmodules.xyz/client-go/core/v1"
-	policy_util "kmodules.xyz/client-go/policy/v1beta1"
 	rbac_util "kmodules.xyz/client-go/rbac/v1beta1"
 )
 
-func (c *Controller) createServiceAccount(memcached *api.Memcached) error {
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached)
+func (c *Controller) createServiceAccount(db *api.Memcached) error {
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, db)
 	if rerr != nil {
 		return rerr
 	}
@@ -23,8 +22,8 @@ func (c *Controller) createServiceAccount(memcached *api.Memcached) error {
 	_, _, err := core_util.CreateOrPatchServiceAccount(
 		c.Client,
 		metav1.ObjectMeta{
-			Name:      memcached.OffshootName(),
-			Namespace: memcached.Namespace,
+			Name:      db.OffshootName(),
+			Namespace: db.Namespace,
 		},
 		func(in *core.ServiceAccount) *core.ServiceAccount {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
@@ -34,8 +33,8 @@ func (c *Controller) createServiceAccount(memcached *api.Memcached) error {
 	return err
 }
 
-func (c *Controller) ensureRole(memcached *api.Memcached, name string) error {
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached)
+func (c *Controller) ensureRole(db *api.Memcached, name string, pspName string) error {
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, db)
 	if rerr != nil {
 		return rerr
 	}
@@ -45,7 +44,7 @@ func (c *Controller) ensureRole(memcached *api.Memcached, name string) error {
 		c.Client,
 		metav1.ObjectMeta{
 			Name:      name,
-			Namespace: memcached.Namespace,
+			Namespace: db.Namespace,
 		},
 		func(in *rbac.Role) *rbac.Role {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
@@ -54,7 +53,7 @@ func (c *Controller) ensureRole(memcached *api.Memcached, name string) error {
 					APIGroups:     []string{policy_v1beta1.GroupName},
 					Resources:     []string{"podsecuritypolicies"},
 					Verbs:         []string{"use"},
-					ResourceNames: []string{name},
+					ResourceNames: []string{pspName},
 				},
 			}
 			return in
@@ -63,8 +62,8 @@ func (c *Controller) ensureRole(memcached *api.Memcached, name string) error {
 	return err
 }
 
-func (c *Controller) createRoleBinding(memcached *api.Memcached, name string) error {
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached)
+func (c *Controller) createRoleBinding(db *api.Memcached, name string) error {
+	ref, rerr := reference.GetReference(clientsetscheme.Scheme, db)
 	if rerr != nil {
 		return rerr
 	}
@@ -73,7 +72,7 @@ func (c *Controller) createRoleBinding(memcached *api.Memcached, name string) er
 		c.Client,
 		metav1.ObjectMeta{
 			Name:      name,
-			Namespace: memcached.Namespace,
+			Namespace: db.Namespace,
 		},
 		func(in *rbac.RoleBinding) *rbac.RoleBinding {
 			core_util.EnsureOwnerReference(&in.ObjectMeta, ref)
@@ -86,7 +85,7 @@ func (c *Controller) createRoleBinding(memcached *api.Memcached, name string) er
 				{
 					Kind:      rbac.ServiceAccountKind,
 					Name:      name,
-					Namespace: memcached.Namespace,
+					Namespace: db.Namespace,
 				},
 			}
 			return in
@@ -95,56 +94,22 @@ func (c *Controller) createRoleBinding(memcached *api.Memcached, name string) er
 	return err
 }
 
-func (c *Controller) ensurePSP(memcached *api.Memcached, name string) error {
-	ref, rerr := reference.GetReference(clientsetscheme.Scheme, memcached)
-	if rerr != nil {
-		return rerr
+func (c *Controller) getPolicyNames(db *api.Memcached) (string, error) {
+	dbVersion, err := c.ExtClient.CatalogV1alpha1().MemcachedVersions().Get(string(db.Spec.Version), metav1.GetOptions{})
+	if err != nil {
+		return "", err
 	}
+	dbPolicyName := dbVersion.Spec.PodSecurityPolicies.DatabasePolicyName
 
-	// Ensure Pod Security Policies for ElasticSearch and it's Snapshot
-	noEscalation := false
-	_, _, err := policy_util.CreateOrPatchPodSecurityPolicy(c.Client,
-		metav1.ObjectMeta{
-			Name: name,
-		},
-		func(in *policy_v1beta1.PodSecurityPolicy) *policy_v1beta1.PodSecurityPolicy {
-			in.OwnerReferences = []metav1.OwnerReference{
-				{
-					APIVersion: ref.APIVersion,
-					Kind:       ref.Kind,
-					Name:       ref.Name,
-					UID:        ref.UID,
-				},
-			}
-			in.Spec = policy_v1beta1.PodSecurityPolicySpec{
-				Privileged:               false,
-				AllowPrivilegeEscalation: &noEscalation,
-				Volumes: []policy_v1beta1.FSType{
-					policy_v1beta1.All,
-				},
-				HostIPC:     false,
-				HostNetwork: false,
-				HostPID:     false,
-				RunAsUser: policy_v1beta1.RunAsUserStrategyOptions{
-					Rule: policy_v1beta1.RunAsUserStrategyRunAsAny,
-				},
-				SELinux: policy_v1beta1.SELinuxStrategyOptions{
-					Rule: policy_v1beta1.SELinuxStrategyRunAsAny,
-				},
-				FSGroup: policy_v1beta1.FSGroupStrategyOptions{
-					Rule: policy_v1beta1.FSGroupStrategyRunAsAny,
-				},
-				SupplementalGroups: policy_v1beta1.SupplementalGroupsStrategyOptions{
-					Rule: policy_v1beta1.SupplementalGroupsStrategyRunAsAny,
-				},
-			}
-			return in
-		},
-	)
-	return err
+	return dbPolicyName, nil
 }
 
 func (c *Controller) ensureRBACStuff(memcached *api.Memcached) error {
+	dbPolicyName, err := c.getPolicyNames(memcached)
+	if err != nil {
+		return err
+	}
+
 	// Create New ServiceAccount
 	if err := c.createServiceAccount(memcached); err != nil {
 		if !kerr.IsAlreadyExists(err) {
@@ -152,15 +117,8 @@ func (c *Controller) ensureRBACStuff(memcached *api.Memcached) error {
 		}
 	}
 
-	// Create New PSP
-	if err := c.ensurePSP(memcached, memcached.OffshootName()); err != nil {
-		if !kerr.IsAlreadyExists(err) {
-			return err
-		}
-	}
-
 	// Create New Role
-	if err := c.ensureRole(memcached, memcached.OffshootName()); err != nil {
+	if err := c.ensureRole(memcached, memcached.OffshootName(), dbPolicyName); err != nil {
 		return err
 	}
 

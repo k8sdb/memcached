@@ -1,5 +1,5 @@
 hash: 98c8cc741ad06058b0e4f48a0e6210b0b5a4457ec31a4e160316ff2a9830c53e
-updated: 2019-03-14T13:06:23.223009243-07:00
+updated: 2019-03-14T13:09:25.929127834-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -1027,7 +1027,6 @@ imports:
   - dynamic
   - logs
   - meta
-  - policy/v1beta1
   - rbac/v1beta1
   - tools/analytics
   - tools/cli

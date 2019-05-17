@@ -45,6 +45,11 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 			vt,
 		)
 	}
+
+	// ensure pdb
+	if err := c.CreateDeploymentPodDisruptionBudget(deployment); err != nil {
+		return vt, err
+	}
 	return vt, nil
 }
 

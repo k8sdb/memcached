@@ -9,8 +9,14 @@ import (
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/core/v1"
+	policy "k8s.io/api/policy/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	kindEviction = "Eviction"
 )
 
 func (f *Invocation) Memcached() *api.Memcached {
@@ -48,6 +54,47 @@ func (f *Framework) TryPatchMemcached(meta metav1.ObjectMeta, transform func(*ap
 
 func (f *Framework) DeleteMemcached(meta metav1.ObjectMeta) error {
 	return f.extClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+}
+
+func (f *Framework) EvictMemcachedLPod(meta metav1.ObjectMeta) (bool, error) {
+	var found = false
+	//if PDB is not found, send error
+	for i := 0; i < 5 && !found; i++ {
+		_, err := f.kubeClient.PolicyV1beta1().PodDisruptionBudgets(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+		if err == nil {
+			found = true
+		} else {
+			time.Sleep(time.Second * 1)
+		}
+	}
+	//Get a single pod from podlist
+	podList, err := f.kubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{})
+	var singlePod v1.Pod
+	for _, pod := range podList.Items {
+		singlePod = pod
+		break
+	}
+
+	policyGroupVersion := "v1beta1"
+	eviction := &policy.Eviction{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: policyGroupVersion,
+			Kind:       kindEviction,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      singlePod.Name,
+			Namespace: singlePod.Namespace,
+		},
+		DeleteOptions: &metav1.DeleteOptions{},
+	}
+
+	err = f.kubeClient.PolicyV1beta1().Evictions(eviction.Namespace).Evict(eviction)
+	var evicted = true
+	if kerr.IsTooManyRequests(err) {
+		err = nil
+		evicted = false
+	}
+	return evicted, err
 }
 
 func (f *Framework) EventuallyMemcached(meta metav1.ObjectMeta) GomegaAsyncAssertion {

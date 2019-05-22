@@ -146,6 +146,9 @@ func setDefaultsFromDormantDB(extClient cs.Interface, memcached *api.Memcached) 
 	// Skip checking UpdateStrategy
 	ddbOriginSpec.UpdateStrategy = memcached.Spec.UpdateStrategy
 
+	// Skip checking ServiceAccountName
+	ddbOriginSpec.PodTemplate.Spec.ServiceAccountName = memcached.Spec.PodTemplate.Spec.ServiceAccountName
+
 	// Skip checking TerminationPolicy
 	ddbOriginSpec.TerminationPolicy = memcached.Spec.TerminationPolicy
 

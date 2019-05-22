@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/appscode/go/crypto/rand"
+	"github.com/appscode/go/log"
 	catalog "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
 	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
@@ -12,6 +13,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	exec_util "kmodules.xyz/client-go/tools/exec"
 )
@@ -127,6 +129,71 @@ var _ = Describe("Memcached", func() {
 				})
 			})
 
+			Context("with custom SA Name", func() {
+				BeforeEach(func() {
+					memcached.Spec.PodTemplate.Spec.ServiceAccountName = "my-custom-sa"
+					memcached.Spec.TerminationPolicy = api.TerminationPolicyPause
+				})
+
+				It("should start and resume successfully", func() {
+					//shouldTakeSnapshot()
+					createAndWaitForRunning()
+					By("Check if Postgres " + memcached.Name + " exists.")
+					_, err := f.GetMemcached(memcached.ObjectMeta)
+					if err != nil {
+						if kerr.IsNotFound(err) {
+							// Postgres was not created. Hence, rest of cleanup is not necessary.
+							return
+						}
+						Expect(err).NotTo(HaveOccurred())
+					}
+
+					By("Delete memcached: " + memcached.Name)
+					err = f.DeleteMemcached(memcached.ObjectMeta)
+					if err != nil {
+						if kerr.IsNotFound(err) {
+							// Memcached was not created. Hence, rest of cleanup is not necessary.
+							log.Infof("Skipping rest of cleanup. Reason: Memcached %s is not found.", memcached.Name)
+							return
+						}
+						Expect(err).NotTo(HaveOccurred())
+					}
+
+					By("Wait for memcached to be paused")
+					f.EventuallyDormantDatabaseStatus(memcached.ObjectMeta).Should(matcher.HavePaused())
+					By("Memcached has paused")
+
+					By("Resume DB")
+					createAndWaitForRunning()
+				})
+			})
+		})
+
+		Context("For Custom Resources", func() {
+
+			Context("with custom SA", func() {
+				var customSAForDB *core.ServiceAccount
+				var customRoleForDB *rbac.Role
+				var customRoleBindingForDB *rbac.RoleBinding
+				BeforeEach(func() {
+					customSAForDB = f.ServiceAccount()
+					memcached.Spec.PodTemplate.Spec.ServiceAccountName = customSAForDB.Name
+					customRoleForDB = f.RoleForElasticsearch(memcached.ObjectMeta)
+					customRoleBindingForDB = f.RoleBinding(customSAForDB.Name, customRoleForDB.Name)
+				})
+				It("should and Run DB successfully", func() {
+					By("Create Database SA")
+					err = f.CreateServiceAccount(customSAForDB)
+					Expect(err).NotTo(HaveOccurred())
+					By("Create Database Role")
+					err = f.CreateRole(customRoleForDB)
+					Expect(err).NotTo(HaveOccurred())
+					By("Create Database RoleBinding")
+					err = f.CreateRoleBinding(customRoleBindingForDB)
+					Expect(err).NotTo(HaveOccurred())
+					createAndWaitForRunning()
+				})
+			})
 		})
 
 		Context("Resume", func() {

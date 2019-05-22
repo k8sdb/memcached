@@ -146,7 +146,7 @@ func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deploymen
 		in.Spec.Template.Spec.SecurityContext = memcached.Spec.PodTemplate.Spec.SecurityContext
 
 		if c.EnableRBAC {
-			in.Spec.Template.Spec.ServiceAccountName = memcached.OffshootName()
+			in.Spec.Template.Spec.ServiceAccountName = memcached.Spec.PodTemplate.Spec.ServiceAccountName
 		}
 
 		in.Spec.Strategy = memcached.Spec.UpdateStrategy

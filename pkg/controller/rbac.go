@@ -2,9 +2,8 @@ package controller
 
 import (
 	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/pkg/errors"
 	core "k8s.io/api/core/v1"
-	policy_v1beta1 "k8s.io/api/policy/v1beta1"
+	policy "k8s.io/api/policy/v1beta1"
 	rbac "k8s.io/api/rbac/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -54,7 +53,7 @@ func (c *Controller) ensureRole(db *api.Memcached, name string, pspName string) 
 			in.Rules = []rbac.PolicyRule{}
 			if pspName != "" {
 				pspRule := rbac.PolicyRule{
-					APIGroups:     []string{policy_v1beta1.GroupName},
+					APIGroups:     []string{policy.GroupName},
 					Resources:     []string{"podsecuritypolicies"},
 					Verbs:         []string{"use"},
 					ResourceNames: []string{pspName},
@@ -111,36 +110,39 @@ func (c *Controller) getPolicyNames(db *api.Memcached) (string, error) {
 }
 
 func (c *Controller) ensureRBACStuff(memcached *api.Memcached) error {
-	dbPolicyName, err := c.getPolicyNames(memcached)
-	if err != nil {
-		return err
-	}
-
 	saName := memcached.Spec.PodTemplate.Spec.ServiceAccountName
 	if saName == "" {
-		return errors.New("Service Account Name should not empty.")
+		saName = memcached.OffshootName()
+		memcached.Spec.PodTemplate.Spec.ServiceAccountName = saName
 	}
-	_, err = c.Client.CoreV1().ServiceAccounts(memcached.Namespace).Get(saName, metav1.GetOptions{})
-	if err != nil {
-		if !kerr.IsNotFound(err) {
-			return err
-		}
-		// Create New ServiceAccount
-		if err := c.createServiceAccount(memcached, saName); err != nil {
+
+	sa, err := c.Client.CoreV1().ServiceAccounts(memcached.Namespace).Get(saName, metav1.GetOptions{})
+	if kerr.IsNotFound(err) {
+		// create service account, since it does not exist
+		if err = c.createServiceAccount(memcached, saName); err != nil {
 			if !kerr.IsAlreadyExists(err) {
 				return err
 			}
 		}
+	} else if err != nil {
+		return err
+	} else if !core_util.IsOwnedBy(sa, memcached) {
+		// user provided the service account, so do nothing.
+		return nil
+	}
 
-		// Create New Role
-		if err := c.ensureRole(memcached, memcached.OffshootName(), dbPolicyName); err != nil {
-			return err
-		}
+	// Create New Role
+	pspName, err := c.getPolicyNames(memcached)
+	if err != nil {
+		return err
+	}
+	if err := c.ensureRole(memcached, memcached.OffshootName(), pspName); err != nil {
+		return err
+	}
 
-		// Create New RoleBinding
-		if err := c.createRoleBinding(memcached, memcached.OffshootName(), saName); err != nil {
-			return err
-		}
+	// Create New RoleBinding
+	if err := c.createRoleBinding(memcached, memcached.OffshootName(), saName); err != nil {
+		return err
 	}
 
 	return nil

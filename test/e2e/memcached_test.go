@@ -198,26 +198,14 @@ var _ = Describe("Memcached", func() {
 		})
 
 		Context("PDB", func() {
-			It("should stop eviction successfully", func() {
-				// Create Memcached
-				By("Create and Run Memcached DB")
-				createAndWaitForRunning()
-				//Evict Memcached pod
-				By("Try to evict a pod")
-				evicted, err := f.EvictMemcachedLPod(memcached.ObjectMeta)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(evicted).To(BeFalse())
-			})
-
 			It("should evict successfully", func() {
 				// Create Memcached
-				memcached.Spec.Replicas = types.Int32P(2)
+				memcached.Spec.Replicas = types.Int32P(3)
 				createAndWaitForRunning()
 				//Evict Memcached pod
 				By("Try to evict a pod")
-				evicted, err := f.EvictMemcachedLPod(memcached.ObjectMeta)
+				err := f.EvictPodsFromDeployment(memcached.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(evicted).To(BeTrue())
 			})
 		})
 

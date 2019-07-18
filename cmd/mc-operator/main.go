@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/kubedb/memcached/pkg/cmds"
 	"kmodules.xyz/client-go/logs"
+	"kubedb.dev/memcached/pkg/cmds"
 )
 
 func main() {

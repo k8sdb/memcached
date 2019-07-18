@@ -8,10 +8,6 @@ import (
 
 	"github.com/appscode/go/homedir"
 	"github.com/appscode/go/log"
-	cs "github.com/kubedb/apimachinery/client/clientset/versioned"
-	"github.com/kubedb/apimachinery/client/clientset/versioned/scheme"
-	"github.com/kubedb/memcached/pkg/controller"
-	"github.com/kubedb/memcached/test/e2e/framework"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -23,6 +19,10 @@ import (
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"kmodules.xyz/client-go/logs"
 	appcat_cs "kmodules.xyz/custom-resources/client/clientset/versioned/typed/appcatalog/v1alpha1"
+	cs "kubedb.dev/apimachinery/client/clientset/versioned"
+	"kubedb.dev/apimachinery/client/clientset/versioned/scheme"
+	"kubedb.dev/memcached/pkg/controller"
+	"kubedb.dev/memcached/test/e2e/framework"
 )
 
 var (

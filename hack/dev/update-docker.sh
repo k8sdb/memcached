@@ -2,7 +2,7 @@
 set -eou pipefail
 
 GOPATH=$(go env GOPATH)
-REPO_ROOT=${GOPATH}/src/github.com/kubedb/memcached
+REPO_ROOT=${GOPATH}/src/kubedb.dev/memcached
 
 export DB_UPDATE=1
 export EXPORTER_UPDATE=1

@@ -6,17 +6,17 @@ import (
 	"github.com/appscode/go/crypto/rand"
 	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
-	catalog "github.com/kubedb/apimachinery/apis/catalog/v1alpha1"
-	api "github.com/kubedb/apimachinery/apis/kubedb/v1alpha1"
-	"github.com/kubedb/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
-	"github.com/kubedb/memcached/test/e2e/framework"
-	"github.com/kubedb/memcached/test/e2e/matcher"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	exec_util "kmodules.xyz/client-go/tools/exec"
+	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
+	"kubedb.dev/memcached/test/e2e/framework"
+	"kubedb.dev/memcached/test/e2e/matcher"
 )
 
 var _ = Describe("Memcached", func() {

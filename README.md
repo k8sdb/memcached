@@ -1,4 +1,4 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/kubedb/memcached)](https://goreportcard.com/report/github.com/kubedb/memcached)
+[![Go Report Card](https://goreportcard.com/badge/kubedb.dev/memcached)](https://goreportcard.com/report/kubedb.dev/memcached)
 [![Build Status](https://travis-ci.org/kubedb/memcached.svg?branch=master)](https://travis-ci.org/kubedb/memcached)
 [![codecov](https://codecov.io/gh/kubedb/memcached/branch/master/graph/badge.svg)](https://codecov.io/gh/kubedb/memcached)
 [![Slack](http://slack.kubernetes.io/badge.svg)](http://slack.kubernetes.io/#kubedb)

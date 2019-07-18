@@ -5,14 +5,14 @@ import (
 	"io"
 	"net"
 
-	"github.com/kubedb/memcached/pkg/controller"
-	"github.com/kubedb/memcached/pkg/server"
 	"github.com/spf13/pflag"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/clientcmd"
+	"kubedb.dev/memcached/pkg/controller"
+	"kubedb.dev/memcached/pkg/server"
 )
 
 const defaultEtcdPathPrefix = "/registry/kubedb.com"

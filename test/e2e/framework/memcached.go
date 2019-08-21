@@ -29,37 +29,37 @@ func (f *Invocation) Memcached() *api.Memcached {
 			},
 		},
 		Spec: api.MemcachedSpec{
-			Version: types.StrYo(DBVersion),
+			Version: types.StrYo(DBCatalogName),
 		},
 	}
 }
 
 func (f *Framework) CreateMemcached(obj *api.Memcached) error {
-	_, err := f.extClient.KubedbV1alpha1().Memcacheds(obj.Namespace).Create(obj)
+	_, err := f.dbClient.KubedbV1alpha1().Memcacheds(obj.Namespace).Create(obj)
 	return err
 }
 
 func (f *Framework) GetMemcached(meta metav1.ObjectMeta) (*api.Memcached, error) {
-	return f.extClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	return f.dbClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 }
 
 func (f *Framework) TryPatchMemcached(meta metav1.ObjectMeta, transform func(*api.Memcached) *api.Memcached) (*api.Memcached, error) {
-	memcached, err := f.extClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+	memcached, err := f.dbClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-	memcached, _, err = util.PatchMemcached(f.extClient.KubedbV1alpha1(), memcached, transform)
+	memcached, _, err = util.PatchMemcached(f.dbClient.KubedbV1alpha1(), memcached, transform)
 	return memcached, err
 }
 
 func (f *Framework) DeleteMemcached(meta metav1.ObjectMeta) error {
-	return f.extClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Delete(meta.Name, &metav1.DeleteOptions{})
+	return f.dbClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Delete(meta.Name, deleteInForeground())
 }
 
 func (f *Framework) EventuallyMemcached(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			_, err := f.extClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			_, err := f.dbClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			if err != nil {
 				if kerr.IsNotFound(err) {
 					return false
@@ -68,7 +68,7 @@ func (f *Framework) EventuallyMemcached(meta metav1.ObjectMeta) GomegaAsyncAsser
 			}
 			return true
 		},
-		time.Minute*5,
+		time.Minute*13,
 		time.Second*5,
 	)
 }
@@ -76,7 +76,7 @@ func (f *Framework) EventuallyMemcached(meta metav1.ObjectMeta) GomegaAsyncAsser
 func (f *Framework) EventuallyMemcachedRunning(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			memcached, err := f.extClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			memcached, err := f.dbClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			return memcached.Status.Phase == api.DatabasePhaseRunning
 		},
@@ -86,12 +86,12 @@ func (f *Framework) EventuallyMemcachedRunning(meta metav1.ObjectMeta) GomegaAsy
 }
 
 func (f *Framework) CleanMemcached() {
-	memcachedList, err := f.extClient.KubedbV1alpha1().Memcacheds(f.namespace).List(metav1.ListOptions{})
+	memcachedList, err := f.dbClient.KubedbV1alpha1().Memcacheds(f.namespace).List(metav1.ListOptions{})
 	if err != nil {
 		return
 	}
 	for _, e := range memcachedList.Items {
-		if _, _, err := util.PatchMemcached(f.extClient.KubedbV1alpha1(), &e, func(in *api.Memcached) *api.Memcached {
+		if _, _, err := util.PatchMemcached(f.dbClient.KubedbV1alpha1(), &e, func(in *api.Memcached) *api.Memcached {
 			in.ObjectMeta.Finalizers = nil
 			in.Spec.TerminationPolicy = api.TerminationPolicyWipeOut
 			return in
@@ -99,7 +99,7 @@ func (f *Framework) CleanMemcached() {
 			fmt.Printf("error Patching Memcached. error: %v", err)
 		}
 	}
-	if err := f.extClient.KubedbV1alpha1().Memcacheds(f.namespace).DeleteCollection(deleteInBackground(), metav1.ListOptions{}); err != nil {
+	if err := f.dbClient.KubedbV1alpha1().Memcacheds(f.namespace).DeleteCollection(deleteInForeground(), metav1.ListOptions{}); err != nil {
 		fmt.Printf("error in deletion of Memcached. Error: %v", err)
 	}
 }
@@ -136,7 +136,7 @@ func (f *Framework) EvictPodsFromDeployment(meta metav1.ObjectMeta) error {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: meta.Namespace,
 		},
-		DeleteOptions: &metav1.DeleteOptions{},
+		DeleteOptions: deleteInForeground(),
 	}
 
 	// try to evict as many pods as allowed in pdb

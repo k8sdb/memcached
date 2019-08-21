@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/appscode/go/homedir"
-	"github.com/appscode/go/log"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
+	kext_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/client-go/kubernetes"
 	clientSetScheme "k8s.io/client-go/kubernetes/scheme"
@@ -21,9 +21,13 @@ import (
 	appcat_cs "kmodules.xyz/custom-resources/client/clientset/versioned/typed/appcatalog/v1alpha1"
 	cs "kubedb.dev/apimachinery/client/clientset/versioned"
 	"kubedb.dev/apimachinery/client/clientset/versioned/scheme"
-	"kubedb.dev/memcached/pkg/controller"
 	"kubedb.dev/memcached/test/e2e/framework"
 )
+
+// To Run E2E tests:
+// - For selfhosted Operator: ./hack/make.py test e2e --selfhosted-operator=true (--storageclass=standard) (--ginkgo.flakeAttempts=2)
+// - For non selfhosted Operator: ./hack/make.py test e2e (--docker-registry=kubedb) (--storageclass=standard) (--ginkgo.flakeAttempts=2)
+// () => Optional
 
 var (
 	storageClass string
@@ -34,10 +38,9 @@ var (
 func init() {
 	scheme.AddToScheme(clientSetScheme.Scheme)
 
-	flag.StringVar(&framework.DockerRegistry, "docker-registry", "kubedbci", "User provided docker repository")
-	flag.StringVar(&framework.DBVersion, "mc-version", "1.5.4-v1", "Memcached version")
-	flag.StringVar(&framework.ExporterTag, "exporter-tag", "canary", "Tag of kubedb/operator used as exporter")
-	flag.BoolVar(&framework.SelfHostedOperator, "selfhosted-operator", false, "Enable this for provided controller")
+	flag.StringVar(&framework.DockerRegistry, "docker-registry", framework.DockerRegistry, "User provided docker repository")
+	flag.StringVar(&framework.DBCatalogName, "db-catalog", framework.DBCatalogName, "Memcached version")
+	flag.BoolVar(&framework.SelfHostedOperator, "selfhosted-operator", framework.SelfHostedOperator, "Enable this for provided controller")
 }
 
 const (
@@ -45,7 +48,6 @@ const (
 )
 
 var (
-	ctrl *controller.Controller
 	root *framework.Framework
 )
 
@@ -60,6 +62,7 @@ func TestE2e(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	defer GinkgoRecover()
 
 	userHome := homedir.HomeDir()
 
@@ -74,14 +77,13 @@ var _ = BeforeSuite(func() {
 
 	// Clients
 	kubeClient := kubernetes.NewForConfigOrDie(config)
-	extClient := cs.NewForConfigOrDie(config)
+	dbClient := cs.NewForConfigOrDie(config)
 	kaClient := ka.NewForConfigOrDie(config)
-	appCatalogClient, err := appcat_cs.NewForConfig(config)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	appCatalogClient := appcat_cs.NewForConfigOrDie(config)
+	aPIExtKubeClient := kext_cs.NewForConfigOrDie(config)
+
 	// Framework
-	root = framework.New(config, kubeClient, extClient, kaClient, appCatalogClient, storageClass)
+	root = framework.New(config, kubeClient, aPIExtKubeClient, dbClient, kaClient, appCatalogClient, storageClass)
 
 	// Create namespace
 	By("Using namespace " + root.Namespace())

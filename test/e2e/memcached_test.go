@@ -12,7 +12,6 @@ import (
 	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	exec_util "kmodules.xyz/client-go/tools/exec"
-	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 	"kubedb.dev/memcached/test/e2e/framework"
@@ -21,17 +20,15 @@ import (
 
 var _ = Describe("Memcached", func() {
 	var (
-		err              error
-		f                *framework.Invocation
-		memcached        *api.Memcached
-		memcachedVersion *catalog.MemcachedVersion
-		skipMessage      string
+		err         error
+		f           *framework.Invocation
+		memcached   *api.Memcached
+		skipMessage string
 	)
 
 	BeforeEach(func() {
 		f = root.Invoke()
 		memcached = f.Memcached()
-		memcachedVersion = f.MemcachedVersion()
 		skipMessage = ""
 	})
 
@@ -62,18 +59,9 @@ var _ = Describe("Memcached", func() {
 
 		By("Wait for memcached resources to be wipedOut")
 		f.EventuallyWipedOut(memcached.ObjectMeta).Should(Succeed())
-
-		err = f.DeleteMemcachedVersion(memcachedVersion.ObjectMeta)
-		if err != nil && !kerr.IsNotFound(err) {
-			Expect(err).NotTo(HaveOccurred())
-		}
 	})
 
 	var createAndWaitForRunning = func() {
-		By("Create MemcachedVersion: " + memcachedVersion.Name)
-		err = f.CreateMemcachedVersion(memcachedVersion)
-		Expect(err).NotTo(HaveOccurred())
-
 		By("Create Memcached: " + memcached.Name)
 		err = f.CreateMemcached(memcached)
 		Expect(err).NotTo(HaveOccurred())
@@ -476,7 +464,7 @@ var _ = Describe("Memcached", func() {
 					createAndWaitForRunning()
 
 					By("Updating Envs")
-					_, _, err := util.PatchMemcached(f.ExtClient().KubedbV1alpha1(), memcached, func(in *api.Memcached) *api.Memcached {
+					_, _, err := util.PatchMemcached(f.DBClient().KubedbV1alpha1(), memcached, func(in *api.Memcached) *api.Memcached {
 						in.Spec.PodTemplate.Spec.Env = []core.EnvVar{
 							{
 								Name:  "TEST_ENV",

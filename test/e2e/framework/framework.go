@@ -2,6 +2,7 @@ package framework
 
 import (
 	"github.com/appscode/go/crypto/rand"
+	crd_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
@@ -11,10 +12,17 @@ import (
 	cs "kubedb.dev/apimachinery/client/clientset/versioned"
 )
 
+var (
+	DockerRegistry     = "kubedbci"
+	SelfHostedOperator = false
+	DBCatalogName      = "1.5.4-v1"
+)
+
 type Framework struct {
 	restConfig       *rest.Config
 	kubeClient       kubernetes.Interface
-	extClient        cs.Interface
+	apiExtKubeClient crd_cs.ApiextensionsV1beta1Interface
+	dbClient         cs.Interface
 	kaClient         ka.Interface
 	tunnel           *portforward.Tunnel
 	appCatalogClient appcat_cs.AppcatalogV1alpha1Interface
@@ -26,7 +34,8 @@ type Framework struct {
 func New(
 	restConfig *rest.Config,
 	kubeClient kubernetes.Interface,
-	extClient cs.Interface,
+	apiExtKubeClient crd_cs.ApiextensionsV1beta1Interface,
+	dbClient cs.Interface,
 	kaClient ka.Interface,
 	appCatalogClient appcat_cs.AppcatalogV1alpha1Interface,
 	storageClass string,
@@ -34,7 +43,8 @@ func New(
 	return &Framework{
 		restConfig:       restConfig,
 		kubeClient:       kubeClient,
-		extClient:        extClient,
+		apiExtKubeClient: apiExtKubeClient,
+		dbClient:         dbClient,
 		kaClient:         kaClient,
 		appCatalogClient: appCatalogClient,
 		name:             "memcached-operator",
@@ -50,8 +60,8 @@ func (f *Framework) Invoke() *Invocation {
 	}
 }
 
-func (fi *Invocation) ExtClient() cs.Interface {
-	return fi.extClient
+func (fi *Invocation) DBClient() cs.Interface {
+	return fi.dbClient
 }
 
 func (fi *Invocation) RestConfig() *rest.Config {

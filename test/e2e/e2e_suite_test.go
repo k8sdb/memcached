@@ -25,8 +25,8 @@ import (
 )
 
 // To Run E2E tests:
-// - For selfhosted Operator: ./hack/make.py test e2e --selfhosted-operator=true (--storageclass=standard) (--ginkgo.flakeAttempts=2)
-// - For non selfhosted Operator: ./hack/make.py test e2e (--docker-registry=kubedb) (--storageclass=standard) (--ginkgo.flakeAttempts=2)
+// - For selfhosted Operator: ./hack/make.py test e2e --selfhosted-operator=true (--ginkgo.flakeAttempts=2)
+// - For non selfhosted Operator: ./hack/make.py test e2e (--docker-registry=kubedb) (--ginkgo.flakeAttempts=2)
 // () => Optional
 
 var (

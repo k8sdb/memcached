@@ -2,11 +2,11 @@ package e2e_test
 
 import (
 	"flag"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/appscode/go/homedir"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
@@ -15,9 +15,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	clientSetScheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 	"kmodules.xyz/client-go/logs"
+	"kmodules.xyz/client-go/tools/clientcmd"
 	appcat_cs "kmodules.xyz/custom-resources/client/clientset/versioned/typed/appcatalog/v1alpha1"
 	cs "kubedb.dev/apimachinery/client/clientset/versioned"
 	"kubedb.dev/apimachinery/client/clientset/versioned/scheme"
@@ -30,7 +31,15 @@ import (
 // () => Optional
 
 var (
-	storageClass string
+	storageClass   string
+	kubeconfigPath = func() string {
+		kubecfg := os.Getenv("KUBECONFIG")
+		if kubecfg != "" {
+			return kubecfg
+		}
+		return filepath.Join(homedir.HomeDir(), ".kube", "config")
+	}()
+	kubeContext = ""
 	//prometheusCrdGroup = pcm.Group
 	//prometheusCrdKinds = pcm.DefaultCrdKinds
 )
@@ -38,6 +47,8 @@ var (
 func init() {
 	scheme.AddToScheme(clientSetScheme.Scheme)
 
+	flag.StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
+	flag.StringVar(&kubeContext, "kube-context", "", "Name of kube context")
 	flag.StringVar(&framework.DockerRegistry, "docker-registry", framework.DockerRegistry, "User provided docker repository")
 	flag.StringVar(&framework.DBCatalogName, "db-catalog", framework.DBCatalogName, "Memcached version")
 	flag.BoolVar(&framework.SelfHostedOperator, "selfhosted-operator", framework.SelfHostedOperator, "Enable this for provided controller")
@@ -64,12 +75,8 @@ func TestE2e(t *testing.T) {
 var _ = BeforeSuite(func() {
 	defer GinkgoRecover()
 
-	userHome := homedir.HomeDir()
-
-	// Kubernetes config
-	kubeconfigPath := filepath.Join(userHome, ".kube/config")
 	By("Using kubeconfig from " + kubeconfigPath)
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	config, err := clientcmd.BuildConfigFromContext(kubeconfigPath, kubeContext)
 	Expect(err).NotTo(HaveOccurred())
 	// raise throttling time. ref: https://github.com/appscode/voyager/issues/640
 	config.Burst = 100
@@ -100,7 +107,6 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-
 	By("Cleanup Left Overs")
 	if !framework.SelfHostedOperator {
 		By("Delete Admission Controller Configs")

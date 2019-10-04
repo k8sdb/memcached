@@ -29,7 +29,8 @@ func (f *Invocation) Memcached() *api.Memcached {
 			},
 		},
 		Spec: api.MemcachedSpec{
-			Version: types.StrYo(DBCatalogName),
+			Version:           types.StrYo(DBCatalogName),
+			TerminationPolicy: api.TerminationPolicyPause,
 		},
 	}
 }

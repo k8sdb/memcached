@@ -137,6 +137,11 @@ func ValidateMemcached(client kubernetes.Interface, extClient cs.Interface, memc
 			return fmt.Errorf("memcached %s/%s is using deprecated version %v. Skipped processing",
 				memcached.Namespace, memcached.Name, memcachedVersion.Name)
 		}
+
+		if err := memcachedVersion.ValidateSpecs(); err != nil {
+			return fmt.Errorf("memcached %s/%s is using invalid memcachedVersion %v. Skipped processing. reason: %v", memcached.Namespace,
+				memcached.Name, memcachedVersion.Name, err)
+		}
 	}
 
 	if err := amv.ValidateEnvVar(memcached.Spec.PodTemplate.Spec.Env, forbiddenEnvVars, api.ResourceKindMemcached); err != nil {

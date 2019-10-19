@@ -4,7 +4,6 @@ import (
 	"github.com/appscode/go/log"
 	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
-	"kubedb.dev/apimachinery/apis"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 )
@@ -13,7 +12,7 @@ func (c *Controller) initWatcher() {
 	c.mcInformer = c.KubedbInformerFactory.Kubedb().V1alpha1().Memcacheds().Informer()
 	c.mcQueue = queue.New("Memcached", c.MaxNumRequeues, c.NumThreads, c.runMemcached)
 	c.mcLister = c.KubedbInformerFactory.Kubedb().V1alpha1().Memcacheds().Lister()
-	c.mcInformer.AddEventHandler(queue.NewObservableUpdateHandler(c.mcQueue.GetQueue(), apis.EnableStatusSubresource))
+	c.mcInformer.AddEventHandler(queue.NewObservableUpdateHandler(c.mcQueue.GetQueue(), true))
 }
 
 func (c *Controller) runMemcached(key string) error {

@@ -5,13 +5,14 @@ import (
 	"strings"
 	"time"
 
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	"kubedb.dev/memcached/pkg/controller"
+
 	"github.com/bradfitz/gomemcache/memcache"
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"kmodules.xyz/client-go/tools/portforward"
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	"kubedb.dev/memcached/pkg/controller"
 )
 
 func (f *Framework) GetDatabasePod(meta metav1.ObjectMeta) (*core.Pod, error) {

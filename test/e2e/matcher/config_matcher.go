@@ -3,8 +3,9 @@ package matcher
 import (
 	"fmt"
 
-	"github.com/onsi/gomega/types"
 	"kubedb.dev/memcached/test/e2e/framework"
+
+	"github.com/onsi/gomega/types"
 )
 
 func UseCustomConfig(config framework.MemcdConfig) types.GomegaMatcher {

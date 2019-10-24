@@ -15,6 +15,7 @@ import (
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
 	kext_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1"
+	utilRuntime "k8s.io/apimachinery/pkg/util/runtime"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/client-go/kubernetes"
 	clientSetScheme "k8s.io/client-go/kubernetes/scheme"
@@ -46,7 +47,7 @@ var (
 )
 
 func init() {
-	scheme.AddToScheme(clientSetScheme.Scheme)
+	utilRuntime.Must(scheme.AddToScheme(clientSetScheme.Scheme))
 
 	flag.StringVar(&kubeconfigPath, "kubeconfig", kubeconfigPath, "Path to kubeconfig file with authorization information (the master location is set by the master flag).")
 	flag.StringVar(&kubeContext, "kube-context", "", "Name of kube context")

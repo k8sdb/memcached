@@ -65,10 +65,7 @@ func (f *Framework) EventuallySetItem(meta metav1.ObjectMeta, key, value string)
 			defer f.tunnel.Close()
 
 			err = client.Set(&memcache.Item{Key: key, Value: []byte(value)})
-			if err != nil {
-				return false
-			}
-			return true
+			return err == nil
 		},
 		time.Minute*5,
 		time.Second*5,

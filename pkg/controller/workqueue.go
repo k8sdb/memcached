@@ -36,7 +36,7 @@ func (c *Controller) runMemcached(key string) error {
 					log.Errorln(err)
 					return err
 				}
-				memcached, _, err = util.PatchMemcached(c.ExtClient.KubedbV1alpha1(), memcached, func(in *api.Memcached) *api.Memcached {
+				_, _, err = util.PatchMemcached(c.ExtClient.KubedbV1alpha1(), memcached, func(in *api.Memcached) *api.Memcached {
 					in.ObjectMeta = core_util.RemoveFinalizer(in.ObjectMeta, api.GenericKey)
 					return in
 				})

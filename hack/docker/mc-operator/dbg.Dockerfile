@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Copyright The KubeDB Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,15 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -xeou pipefail
+FROM {ARG_FROM}
 
-DOCKER_REGISTRY=${DOCKER_REGISTRY:-kubedb}
-IMG=memcached
-SUFFIX=v1
-TAG="1.5-$SUFFIX"
-PATCH="1.5.4-$SUFFIX"
+ADD bin/{ARG_OS}_{ARG_ARCH}/{ARG_BIN} /{ARG_BIN}
 
-docker pull "$DOCKER_REGISTRY/$IMG:$PATCH"
-
-docker tag "$DOCKER_REGISTRY/$IMG:$PATCH" "$DOCKER_REGISTRY/$IMG:$TAG"
-docker push "$DOCKER_REGISTRY/$IMG:$TAG"
+ENTRYPOINT ["/{ARG_BIN}"]

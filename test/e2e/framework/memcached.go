@@ -97,7 +97,7 @@ func (f *Framework) EventuallyMemcachedRunning(meta metav1.ObjectMeta) GomegaAsy
 			Expect(err).NotTo(HaveOccurred())
 			return memcached.Status.Phase == api.DatabasePhaseRunning
 		},
-		time.Minute*5,
+		time.Minute*13,
 		time.Second*5,
 	)
 }

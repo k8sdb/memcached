@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package admission
 
 import (
@@ -239,7 +240,7 @@ func sampleMemcached() api.Memcached {
 			Version:  "1.5.4",
 			Replicas: types.Int32P(3),
 			UpdateStrategy: apps.DeploymentStrategy{
-				Type: apps.RollingUpdateStatefulSetStrategyType,
+				Type: apps.RollingUpdateDeploymentStrategyType,
 			},
 			TerminationPolicy: api.TerminationPolicyDoNotTerminate,
 		},

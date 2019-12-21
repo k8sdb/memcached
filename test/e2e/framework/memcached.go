@@ -23,7 +23,6 @@ import (
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
 
 	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/go/encoding/json/types"
 	. "github.com/onsi/gomega"
 	policy "k8s.io/api/policy/v1beta1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -45,7 +44,7 @@ func (f *Invocation) Memcached() *api.Memcached {
 			},
 		},
 		Spec: api.MemcachedSpec{
-			Version:           types.StrYo(DBCatalogName),
+			Version:           DBCatalogName,
 			TerminationPolicy: api.TerminationPolicyPause,
 		},
 	}

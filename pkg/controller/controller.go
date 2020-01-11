@@ -101,7 +101,7 @@ func (c *Controller) EnsureCustomResourceDefinitions() error {
 		api.Snapshot{}.CustomResourceDefinition(),
 		appcat.AppBinding{}.CustomResourceDefinition(),
 	}
-	return apiext_util.RegisterCRDs(c.ApiExtKubeClient, crds)
+	return apiext_util.RegisterCRDs(c.Client.Discovery(), c.ApiExtKubeClient, crds)
 }
 
 // InitInformer initializes Memcached, DormantDB amd Snapshot watcher

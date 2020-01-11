@@ -106,11 +106,10 @@ func (c *Controller) createDormantDatabase(memcached *api.Memcached) (*api.Dorma
 		Spec: api.DormantDatabaseSpec{
 			Origin: api.Origin{
 				PartialObjectMeta: ofst.PartialObjectMeta{
-					Name:              memcached.Name,
-					Namespace:         memcached.Namespace,
-					Labels:            memcached.Labels,
-					Annotations:       memcached.Annotations,
-					CreationTimestamp: memcached.CreationTimestamp,
+					Name:        memcached.Name,
+					Namespace:   memcached.Namespace,
+					Labels:      memcached.Labels,
+					Annotations: memcached.Annotations,
 				},
 				Spec: api.OriginSpec{
 					Memcached: &memcached.Spec,

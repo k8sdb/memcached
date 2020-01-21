@@ -119,8 +119,6 @@ var _ = AfterSuite(func() {
 	By("Cleanup Left Overs")
 	By("Delete left over Memcached objects")
 	root.CleanMemcached()
-	By("Delete left over Dormant Database objects")
-	root.CleanDormantDatabase()
 	By("Delete Namespace")
 	err := root.DeleteNamespace()
 	Expect(err).NotTo(HaveOccurred())

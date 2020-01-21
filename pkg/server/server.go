@@ -22,9 +22,7 @@ import (
 	"strings"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	"kubedb.dev/apimachinery/pkg/admission/dormantdatabase"
 	"kubedb.dev/apimachinery/pkg/admission/namespace"
-	"kubedb.dev/apimachinery/pkg/admission/snapshot"
 	"kubedb.dev/apimachinery/pkg/eventer"
 	mcAdmsn "kubedb.dev/memcached/pkg/admission"
 	"kubedb.dev/memcached/pkg/controller"
@@ -137,8 +135,6 @@ func (c completedConfig) New() (*MemcachedServer, error) {
 	if c.OperatorConfig.EnableValidatingWebhook {
 		c.ExtraConfig.AdmissionHooks = append(c.ExtraConfig.AdmissionHooks,
 			&mcAdmsn.MemcachedValidator{},
-			&snapshot.SnapshotValidator{},
-			&dormantdatabase.DormantDatabaseValidator{},
 			&namespace.NamespaceValidator{
 				Resources: []string{api.ResourcePluralMemcached},
 			})

@@ -45,7 +45,7 @@ func (f *Invocation) Memcached() *api.Memcached {
 		},
 		Spec: api.MemcachedSpec{
 			Version:           DBCatalogName,
-			TerminationPolicy: api.TerminationPolicyPause,
+			TerminationPolicy: api.TerminationPolicyHalt,
 		},
 	}
 }
@@ -59,7 +59,7 @@ func (f *Framework) GetMemcached(meta metav1.ObjectMeta) (*api.Memcached, error)
 	return f.dbClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 }
 
-func (f *Framework) TryPatchMemcached(meta metav1.ObjectMeta, transform func(*api.Memcached) *api.Memcached) (*api.Memcached, error) {
+func (f *Framework) PatchMemcached(meta metav1.ObjectMeta, transform func(*api.Memcached) *api.Memcached) (*api.Memcached, error) {
 	memcached, err := f.dbClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -85,6 +85,18 @@ func (f *Framework) EventuallyMemcached(meta metav1.ObjectMeta) GomegaAsyncAsser
 			return true
 		},
 		time.Minute*13,
+		time.Second*5,
+	)
+}
+
+func (f *Framework) EventuallyMemcachedPhase(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+	return Eventually(
+		func() api.DatabasePhase {
+			db, err := f.dbClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Get(meta.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			return db.Status.Phase
+		},
+		time.Minute*5,
 		time.Second*5,
 	)
 }

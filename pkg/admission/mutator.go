@@ -140,8 +140,11 @@ func setMonitoringPort(memcached *api.Memcached) {
 		if memcached.Spec.Monitor.Prometheus == nil {
 			memcached.Spec.Monitor.Prometheus = &mona.PrometheusSpec{}
 		}
-		if memcached.Spec.Monitor.Prometheus.Port == 0 {
-			memcached.Spec.Monitor.Prometheus.Port = api.PrometheusExporterPortNumber
+		if memcached.Spec.Monitor.Prometheus.Exporter == nil {
+			memcached.Spec.Monitor.Prometheus.Exporter = &mona.PrometheusExporterSpec{}
+		}
+		if memcached.Spec.Monitor.Prometheus.Exporter.Port == 0 {
+			memcached.Spec.Monitor.Prometheus.Exporter.Port = api.PrometheusExporterPortNumber
 		}
 	}
 }

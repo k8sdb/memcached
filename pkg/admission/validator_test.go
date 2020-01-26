@@ -269,7 +269,9 @@ func editSpecMonitor(old api.Memcached) api.Memcached {
 	old.Spec.Monitor = &mona.AgentSpec{
 		Agent: mona.AgentPrometheusBuiltin,
 		Prometheus: &mona.PrometheusSpec{
-			Port: 5670,
+			Exporter: &mona.PrometheusExporterSpec{
+				Port: 5670,
+			},
 		},
 	}
 	return old

@@ -38,6 +38,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
 	apiext_util "kmodules.xyz/client-go/apiextensions/v1beta1"
+	core_util "kmodules.xyz/client-go/core/v1"
 	"kmodules.xyz/client-go/tools/queue"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	appcat_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
@@ -68,6 +69,7 @@ func New(
 	appCatalogClient appcat_cs.Interface,
 	promClient pcm.MonitoringV1Interface,
 	opt amc.Config,
+	topology *core_util.Topology,
 	recorder record.EventRecorder,
 ) *Controller {
 	return &Controller{
@@ -76,8 +78,8 @@ func New(
 			Client:           client,
 			ExtClient:        extClient,
 			ApiExtKubeClient: apiExtKubeClient,
-
 			AppCatalogClient: appCatalogClient,
+			ClusterTopology:  topology,
 		},
 		Config:     opt,
 		promClient: promClient,

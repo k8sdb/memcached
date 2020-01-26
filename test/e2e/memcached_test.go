@@ -138,7 +138,7 @@ var _ = Describe("Memcached", func() {
 			Context("with custom SA Name", func() {
 				BeforeEach(func() {
 					memcached.Spec.PodTemplate.Spec.ServiceAccountName = "my-custom-sa"
-					memcached.Spec.TerminationPolicy = api.TerminationPolicyPause
+					memcached.Spec.TerminationPolicy = api.TerminationPolicyHalt
 				})
 
 				It("should start and resume successfully", func() {
@@ -348,17 +348,17 @@ var _ = Describe("Memcached", func() {
 					By("Check for Running memcached")
 					f.EventuallyMemcachedRunning(memcached.ObjectMeta).Should(BeTrue())
 
-					By("Update memcached to set spec.terminationPolicy = Pause")
+					By("Update memcached to set spec.terminationPolicy = Halt")
 					_, err := f.PatchMemcached(memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
-						in.Spec.TerminationPolicy = api.TerminationPolicyPause
+						in.Spec.TerminationPolicy = api.TerminationPolicyHalt
 						return in
 					})
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
 
-			Context("with TerminationPolicyPause)", func() {
-				var shouldRunWithTerminationPause = func() {
+			Context("with TerminationPolicyHalt)", func() {
+				var shouldRunWithTerminationHalt = func() {
 					shouldRunWithTermination()
 
 					By("Halt Memcached: Update memcached to set spec.halted = true")
@@ -369,7 +369,7 @@ var _ = Describe("Memcached", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for halted/paused memcached")
-					f.EventuallyMemcachedPhase(memcached.ObjectMeta).Should(Equal(api.DatabasePhasePaused))
+					f.EventuallyMemcachedPhase(memcached.ObjectMeta).Should(Equal(api.DatabasePhaseHalted))
 
 					By("Resume Memcached: Update memcached to set spec.halted = false")
 					_, err = f.PatchMemcached(memcached.ObjectMeta, func(in *api.Memcached) *api.Memcached {
@@ -406,7 +406,7 @@ var _ = Describe("Memcached", func() {
 					f.EventuallyGetItem(memcached.ObjectMeta, key).Should(BeEquivalentTo(value))
 				}
 
-				It("should create dormantdatabase successfully", shouldRunWithTerminationPause)
+				It("should create dormantdatabase successfully", shouldRunWithTerminationHalt)
 			})
 
 			Context("with TerminationPolicyDelete", func() {

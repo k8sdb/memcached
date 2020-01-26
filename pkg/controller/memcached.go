@@ -133,15 +133,15 @@ func (c *Controller) halt(db *api.Memcached) error {
 		return errors.New("can't halt db. 'spec.terminationPolicy' is not 'Halt'")
 	}
 	log.Infof("Halting Memcached %v/%v", db.Namespace, db.Name)
-	if err := c.pauseDatabase(db); err != nil {
+	if err := c.haltDatabase(db); err != nil {
 		return err
 	}
 	if err := c.waitUntilPaused(db); err != nil {
 		return err
 	}
-	log.Infof("update status of Memcached %v/%v to Paused.", db.Namespace, db.Name)
+	log.Infof("update status of Memcached %v/%v to Halted.", db.Namespace, db.Name)
 	if _, err := util.UpdateMemcachedStatus(c.ExtClient.KubedbV1alpha1(), db, func(in *api.MemcachedStatus) *api.MemcachedStatus {
-		in.Phase = api.DatabasePhasePaused
+		in.Phase = api.DatabasePhaseHalted
 		in.ObservedGeneration = db.Generation
 		return in
 	}); err != nil {

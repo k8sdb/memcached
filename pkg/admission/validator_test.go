@@ -186,7 +186,7 @@ var cases = []struct {
 		"foo",
 		"default",
 		admission.Update,
-		pauseDatastore(sampleMemcached()),
+		haltDatastore(sampleMemcached()),
 		sampleMemcached(),
 		false,
 		true,
@@ -201,12 +201,12 @@ var cases = []struct {
 		true,
 		false,
 	},
-	{"Delete Memcached when Spec.TerminationPolicy=Pause",
+	{"Delete Memcached when Spec.TerminationPolicy=Halt",
 		requestKind,
 		"foo",
 		"default",
 		admission.Delete,
-		pauseDatastore(sampleMemcached()),
+		haltDatastore(sampleMemcached()),
 		api.Memcached{},
 		true,
 		true,
@@ -278,12 +278,12 @@ func editSpecMonitor(old api.Memcached) api.Memcached {
 // should be failed because more fields required for COreOS Monitoring
 func editSpecInvalidMonitor(old api.Memcached) api.Memcached {
 	old.Spec.Monitor = &mona.AgentSpec{
-		Agent: mona.AgentCoreOSPrometheus,
+		Agent: mona.AgentPrometheusOperator,
 	}
 	return old
 }
 
-func pauseDatastore(old api.Memcached) api.Memcached {
-	old.Spec.TerminationPolicy = api.TerminationPolicyPause
+func haltDatastore(old api.Memcached) api.Memcached {
+	old.Spec.TerminationPolicy = api.TerminationPolicyHalt
 	return old
 }

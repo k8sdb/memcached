@@ -335,21 +335,24 @@ REGISTRY_SECRET ?=
 ifeq ($(strip $(REGISTRY_SECRET)),)
 	IMAGE_PULL_SECRETS =
 else
-	IMAGE_PULL_SECRETS = --set imagePullSecrets[0]=$(REGISTRY_SECRET)
+	IMAGE_PULL_SECRETS = --set imagePullSecrets[0].name=$(REGISTRY_SECRET)
 endif
 
 .PHONY: install
 install:
 	@cd ../installer; \
-	helm install kubedb charts/kubedb \
+	helm install kubedb charts/kubedb --wait \
 		--namespace=kube-system \
-		--set kubedb.registry=$(REGISTRY) \
-		--set kubedb.repository=mc-operator \
-		--set kubedb.tag=$(TAG) \
+		--set operator.registry=$(REGISTRY) \
+		--set operator.repository=mc-operator \
+		--set operator.tag=$(TAG) \
+		--set enterprise.enabled=false \
+		--set enterprise.tag=c5436b50_linux_amd64 \
 		--set imagePullPolicy=Always \
 		$(IMAGE_PULL_SECRETS); \
-	kubectl wait --for=condition=Ready pods -n kube-system -l app=kubedb --timeout=5m; \
-	kubectl wait --for=condition=Available apiservice -l app=kubedb --timeout=5m; \
+	kubectl wait --for=condition=Available apiservice -l 'app.kubernetes.io/name=kubedb,app.kubernetes.io/instance=kubedb' --timeout=5m; \
+	until kubectl get crds memcachedversions.catalog.kubedb.com -o=jsonpath='{.items[0].metadata.name}' &> /dev/null; do sleep 1; done; \
+	kubectl wait --for=condition=Established crds -l app.kubernetes.io/name=kubedb --timeout=5m; \
 	helm install kubedb-catalog charts/kubedb-catalog \
 		--namespace=kube-system \
 		--set catalog.elasticsearch=false \
@@ -371,7 +374,7 @@ uninstall:
 
 .PHONY: purge
 purge: uninstall
-	kubectl delete crds -l app=kubedb
+	kubectl delete crds -l app.kubernetes.io/name=kubedb
 
 .PHONY: dev
 dev: gen fmt push

@@ -16,6 +16,7 @@ limitations under the License.
 package e2e_test
 
 import (
+	"context"
 	"fmt"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
@@ -30,6 +31,7 @@ import (
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	exec_util "kmodules.xyz/client-go/tools/exec"
 )
 
@@ -480,7 +482,7 @@ var _ = Describe("Memcached", func() {
 					createAndWaitForRunning()
 
 					By("Updating Envs")
-					_, _, err := util.PatchMemcached(f.DBClient().KubedbV1alpha1(), memcached, func(in *api.Memcached) *api.Memcached {
+					_, _, err := util.PatchMemcached(context.TODO(), f.DBClient().KubedbV1alpha1(), memcached, func(in *api.Memcached) *api.Memcached {
 						in.Spec.PodTemplate.Spec.Env = []core.EnvVar{
 							{
 								Name:  "TEST_ENV",
@@ -488,7 +490,7 @@ var _ = Describe("Memcached", func() {
 							},
 						}
 						return in
-					})
+					}, metav1.PatchOptions{})
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})

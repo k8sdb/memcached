@@ -50,7 +50,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 	}
 	// Check Deployment Pod status
 	if vt != kutil.VerbUnchanged {
-		if err := app_util.WaitUntilDeploymentReady(c.Client, deployment.ObjectMeta); err != nil {
+		if err := app_util.WaitUntilDeploymentReady(context.TODO(), c.Client, deployment.ObjectMeta); err != nil {
 			return kutil.VerbUnchanged, err
 		}
 		c.recorder.Eventf(
@@ -93,12 +93,12 @@ func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deploymen
 
 	owner := metav1.NewControllerRef(memcached, api.SchemeGroupVersion.WithKind(api.ResourceKindMemcached))
 
-	memcachedVersion, err := c.ExtClient.CatalogV1alpha1().MemcachedVersions().Get(string(memcached.Spec.Version), metav1.GetOptions{})
+	memcachedVersion, err := c.ExtClient.CatalogV1alpha1().MemcachedVersions().Get(context.TODO(), string(memcached.Spec.Version), metav1.GetOptions{})
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	return app_util.CreateOrPatchDeployment(c.Client, deploymentMeta, func(in *apps.Deployment) *apps.Deployment {
+	return app_util.CreateOrPatchDeployment(context.TODO(), c.Client, deploymentMeta, func(in *apps.Deployment) *apps.Deployment {
 		in.Labels = memcached.OffshootLabels()
 		in.Annotations = memcached.Spec.PodTemplate.Controller.Annotations
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
@@ -166,7 +166,7 @@ func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deploymen
 		in.Spec.Strategy = memcached.Spec.UpdateStrategy
 
 		return in
-	})
+	}, metav1.PatchOptions{})
 }
 
 // upsertUserEnv add/overwrite env from user provided env in crd spec

@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 
 	core "k8s.io/api/core/v1"
@@ -33,6 +34,7 @@ func (c *Controller) createServiceAccount(db *api.Memcached, saName string) erro
 	owner := metav1.NewControllerRef(db, api.SchemeGroupVersion.WithKind(api.ResourceKindMemcached))
 	// Create new ServiceAccount
 	_, _, err := core_util.CreateOrPatchServiceAccount(
+		context.TODO(),
 		c.Client,
 		metav1.ObjectMeta{
 			Name:      saName,
@@ -43,6 +45,7 @@ func (c *Controller) createServiceAccount(db *api.Memcached, saName string) erro
 			in.Labels = db.OffshootLabels()
 			return in
 		},
+		metav1.PatchOptions{},
 	)
 	return err
 }
@@ -52,6 +55,7 @@ func (c *Controller) ensureRole(db *api.Memcached, name string, pspName string) 
 
 	// Create new Role for ElasticSearch and it's Snapshot
 	_, _, err := rbac_util.CreateOrPatchRole(
+		context.TODO(),
 		c.Client,
 		metav1.ObjectMeta{
 			Name:      name,
@@ -72,6 +76,7 @@ func (c *Controller) ensureRole(db *api.Memcached, name string, pspName string) 
 			}
 			return in
 		},
+		metav1.PatchOptions{},
 	)
 	return err
 }
@@ -80,6 +85,7 @@ func (c *Controller) createRoleBinding(db *api.Memcached, roleName string, saNam
 	owner := metav1.NewControllerRef(db, api.SchemeGroupVersion.WithKind(api.ResourceKindMemcached))
 	// Ensure new RoleBindings for ElasticSearch and it's Snapshot
 	_, _, err := rbac_util.CreateOrPatchRoleBinding(
+		context.TODO(),
 		c.Client,
 		metav1.ObjectMeta{
 			Name:      roleName,
@@ -102,12 +108,13 @@ func (c *Controller) createRoleBinding(db *api.Memcached, roleName string, saNam
 			}
 			return in
 		},
+		metav1.PatchOptions{},
 	)
 	return err
 }
 
 func (c *Controller) getPolicyNames(db *api.Memcached) (string, error) {
-	dbVersion, err := c.ExtClient.CatalogV1alpha1().MemcachedVersions().Get(string(db.Spec.Version), metav1.GetOptions{})
+	dbVersion, err := c.ExtClient.CatalogV1alpha1().MemcachedVersions().Get(context.TODO(), string(db.Spec.Version), metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}

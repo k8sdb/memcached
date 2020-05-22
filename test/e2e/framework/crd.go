@@ -16,6 +16,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"time"
 
 	. "github.com/onsi/gomega"
@@ -28,7 +29,7 @@ func (f *Framework) EventuallyCRD() GomegaAsyncAssertion {
 	return Eventually(
 		func() error {
 			// Check Memcached TPR
-			if _, err := f.dbClient.KubedbV1alpha1().Memcacheds(core.NamespaceAll).List(metav1.ListOptions{}); err != nil {
+			if _, err := f.dbClient.KubedbV1alpha1().Memcacheds(core.NamespaceAll).List(context.TODO(), metav1.ListOptions{}); err != nil {
 				return errors.New("CRD Memcached is not ready")
 			}
 

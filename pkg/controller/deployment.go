@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
@@ -70,7 +71,7 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 
 func (c *Controller) checkDeployment(memcached *api.Memcached) error {
 	// Deployment for Memcached database
-	deployment, err := c.Client.AppsV1().Deployments(memcached.Namespace).Get(memcached.OffshootName(), metav1.GetOptions{})
+	deployment, err := c.Client.AppsV1().Deployments(memcached.Namespace).Get(context.TODO(), memcached.OffshootName(), metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil

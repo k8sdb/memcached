@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	"fmt"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
@@ -63,7 +64,7 @@ func (c *Controller) deleteMonitor(memcached *api.Memcached) error {
 }
 
 func (c *Controller) getOldAgent(memcached *api.Memcached) mona.Agent {
-	service, err := c.Client.CoreV1().Services(memcached.Namespace).Get(memcached.StatsService().ServiceName(), metav1.GetOptions{})
+	service, err := c.Client.CoreV1().Services(memcached.Namespace).Get(context.TODO(), memcached.StatsService().ServiceName(), metav1.GetOptions{})
 	if err != nil {
 		return nil
 	}
@@ -72,7 +73,7 @@ func (c *Controller) getOldAgent(memcached *api.Memcached) mona.Agent {
 }
 
 func (c *Controller) setNewAgent(memcached *api.Memcached) error {
-	service, err := c.Client.CoreV1().Services(memcached.Namespace).Get(memcached.StatsService().ServiceName(), metav1.GetOptions{})
+	service, err := c.Client.CoreV1().Services(memcached.Namespace).Get(context.TODO(), memcached.StatsService().ServiceName(), metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

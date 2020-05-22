@@ -17,15 +17,16 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 
 	core "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1beta1"
-	rbac "k8s.io/api/rbac/v1beta1"
+	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_util "kmodules.xyz/client-go/core/v1"
-	rbac_util "kmodules.xyz/client-go/rbac/v1beta1"
+	rbac_util "kmodules.xyz/client-go/rbac/v1"
 )
 
 func (c *Controller) createServiceAccount(db *api.Memcached, saName string) error {
@@ -122,7 +123,7 @@ func (c *Controller) ensureRBACStuff(memcached *api.Memcached) error {
 		memcached.Spec.PodTemplate.Spec.ServiceAccountName = saName
 	}
 
-	sa, err := c.Client.CoreV1().ServiceAccounts(memcached.Namespace).Get(saName, metav1.GetOptions{})
+	sa, err := c.Client.CoreV1().ServiceAccounts(memcached.Namespace).Get(context.TODO(), saName, metav1.GetOptions{})
 	if kerr.IsNotFound(err) {
 		// create service account, since it does not exist
 		if err = c.createServiceAccount(memcached, saName); err != nil {

@@ -16,6 +16,7 @@ limitations under the License.
 package framework
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -136,7 +137,7 @@ func (f *Framework) EvictPodsFromDeployment(meta metav1.ObjectMeta) error {
 	var err error
 	deployName := meta.Name
 	//if PDB is not found, send error
-	pdb, err := f.kubeClient.PolicyV1beta1().PodDisruptionBudgets(meta.Namespace).Get(deployName, metav1.GetOptions{})
+	pdb, err := f.kubeClient.PolicyV1beta1().PodDisruptionBudgets(meta.Namespace).Get(context.TODO(), deployName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -148,7 +149,7 @@ func (f *Framework) EvictPodsFromDeployment(meta metav1.ObjectMeta) error {
 		api.LabelDatabaseKind: api.ResourceKindMemcached,
 		api.LabelDatabaseName: meta.GetName(),
 	}
-	pods, err := f.kubeClient.CoreV1().Pods(meta.Namespace).List(metav1.ListOptions{LabelSelector: podSelector.String()})
+	pods, err := f.kubeClient.CoreV1().Pods(meta.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: podSelector.String()})
 	if err != nil {
 		return err
 	}
@@ -171,7 +172,7 @@ func (f *Framework) EvictPodsFromDeployment(meta metav1.ObjectMeta) error {
 	minAvailable := pdb.Spec.MinAvailable.IntValue()
 	for i, pod := range pods.Items {
 		eviction.Name = pod.Name
-		err = f.kubeClient.PolicyV1beta1().Evictions(eviction.Namespace).Evict(eviction)
+		err = f.kubeClient.PolicyV1beta1().Evictions(eviction.Namespace).Evict(context.TODO(), eviction)
 		if i < (podCount - minAvailable) {
 			if err != nil {
 				return err

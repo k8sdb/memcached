@@ -17,6 +17,7 @@ limitations under the License.
 package controller
 
 import (
+	"context"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 
 	"github.com/appscode/go/log"
@@ -62,7 +63,7 @@ func (c *Controller) waitUntilRBACStuffDeleted(meta metav1.ObjectMeta) error {
 func (c *Controller) waitUntilDeploymentsDeleted(db *api.Memcached) error {
 	log.Infof("waiting for deployments for Memcached %v/%v to be deleted\n", db.Namespace, db.Name)
 	return wait.PollImmediate(kutil.RetryInterval, kutil.GCTimeout, func() (bool, error) {
-		if sts, err := c.Client.AppsV1().Deployments(db.Namespace).List(metav1.ListOptions{LabelSelector: labels.SelectorFromSet(db.OffshootSelectors()).String()}); err != nil && kerr.IsNotFound(err) || len(sts.Items) == 0 {
+		if sts, err := c.Client.AppsV1().Deployments(db.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: labels.SelectorFromSet(db.OffshootSelectors()).String()}); err != nil && kerr.IsNotFound(err) || len(sts.Items) == 0 {
 			return true, nil
 		}
 		return false, nil
@@ -92,7 +93,8 @@ func (c *Controller) haltDatabase(db *api.Memcached) error {
 		PolicyV1beta1().
 		PodDisruptionBudgets(db.Namespace).
 		DeleteCollection(
-			&metav1.DeleteOptions{PropagationPolicy: &policy},
+			context.TODO(),
+			metav1.DeleteOptions{PropagationPolicy: &policy},
 			metav1.ListOptions{LabelSelector: labelSelector},
 		); err != nil {
 		return err
@@ -104,7 +106,8 @@ func (c *Controller) haltDatabase(db *api.Memcached) error {
 		AppsV1().
 		Deployments(db.Namespace).
 		DeleteCollection(
-			&metav1.DeleteOptions{PropagationPolicy: &policy},
+			context.TODO(),
+			metav1.DeleteOptions{PropagationPolicy: &policy},
 			metav1.ListOptions{LabelSelector: labelSelector},
 		); err != nil {
 		return err
@@ -116,7 +119,8 @@ func (c *Controller) haltDatabase(db *api.Memcached) error {
 		RbacV1().
 		RoleBindings(db.Namespace).
 		DeleteCollection(
-			&metav1.DeleteOptions{PropagationPolicy: &policy},
+			context.TODO(),
+			metav1.DeleteOptions{PropagationPolicy: &policy},
 			metav1.ListOptions{LabelSelector: labelSelector},
 		); err != nil {
 		return err
@@ -126,7 +130,8 @@ func (c *Controller) haltDatabase(db *api.Memcached) error {
 		RbacV1().
 		Roles(db.Namespace).
 		DeleteCollection(
-			&metav1.DeleteOptions{PropagationPolicy: &policy},
+			context.TODO(),
+			metav1.DeleteOptions{PropagationPolicy: &policy},
 			metav1.ListOptions{LabelSelector: labelSelector},
 		); err != nil {
 		return err
@@ -136,7 +141,8 @@ func (c *Controller) haltDatabase(db *api.Memcached) error {
 		CoreV1().
 		ServiceAccounts(db.Namespace).
 		DeleteCollection(
-			&metav1.DeleteOptions{PropagationPolicy: &policy},
+			context.TODO(),
+			metav1.DeleteOptions{PropagationPolicy: &policy},
 			metav1.ListOptions{LabelSelector: labelSelector},
 		); err != nil {
 		return err
@@ -148,7 +154,7 @@ func (c *Controller) haltDatabase(db *api.Memcached) error {
 	svcs, err := c.Client.
 		CoreV1().
 		Services(db.Namespace).
-		List(metav1.ListOptions{LabelSelector: labelSelector})
+		List(context.TODO(), metav1.ListOptions{LabelSelector: labelSelector})
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
@@ -156,7 +162,7 @@ func (c *Controller) haltDatabase(db *api.Memcached) error {
 		if err := c.Client.
 			CoreV1().
 			Services(db.Namespace).
-			Delete(svc.Name, &metav1.DeleteOptions{PropagationPolicy: &policy}); err != nil {
+			Delete(context.TODO(), svc.Name, metav1.DeleteOptions{PropagationPolicy: &policy}); err != nil {
 			return err
 		}
 	}

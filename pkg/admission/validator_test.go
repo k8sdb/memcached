@@ -30,6 +30,7 @@ import (
 	admission "k8s.io/api/admission/v1beta1"
 	apps "k8s.io/api/apps/v1"
 	authenticationV1 "k8s.io/api/authentication/v1"
+	v1 "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -244,6 +245,11 @@ func sampleMemcached() api.Memcached {
 				Type: apps.RollingUpdateDeploymentStrategyType,
 			},
 			TerminationPolicy: api.TerminationPolicyDoNotTerminate,
+			DataVolume: &v1.VolumeSource{
+				CSI: &v1.CSIVolumeSource{
+					Driver: "foobar.example.com",
+				},
+			},
 		},
 	}
 }

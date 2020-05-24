@@ -562,5 +562,89 @@ var _ = Describe("Memcached", func() {
 
 		})
 
+		Context("PMEM data volume", func() {
+
+			sizeInMB := 64
+			fsOverheadMB := 10
+			memoryFile := "/data/memory-file"
+
+			customConfigs := []framework.MemcdConfig{
+				{
+					// See https://github.com/memcached/memcached/wiki/WarmRestart
+					Name:  "memory-file",
+					Value: memoryFile,
+				},
+				{
+					Name:  "memory-limit",
+					Value: fmt.Sprintf("%d", sizeInMB-fsOverheadMB),
+				},
+			}
+
+			var (
+				userConfig *core.ConfigMap
+			)
+
+			BeforeEach(func() {
+				userConfig = f.GetCustomConfig(customConfigs)
+				By("Creating configMap: " + userConfig.Name)
+				err := f.CreateConfigMap(userConfig)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				By("Deleting configMap: " + userConfig.Name)
+				err := f.DeleteConfigMap(userConfig.ObjectMeta)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			testit := func(dataVolume *core.VolumeSource) {
+				if skipMessage != "" {
+					Skip(skipMessage)
+				}
+
+				memcached.Spec.ConfigSource = &core.VolumeSource{
+					ConfigMap: &core.ConfigMapVolumeSource{
+						LocalObjectReference: core.LocalObjectReference{
+							Name: userConfig.Name,
+						},
+					},
+				}
+				memcached.Spec.DataVolume = dataVolume
+
+				// Create Memcached
+				createAndWaitForRunning()
+
+				By("Checking database pod has mounted configSource volume")
+				f.EventuallyConfigSourceVolumeMounted(memcached.ObjectMeta).Should(BeTrue())
+
+				// Check that the volume really is used.
+				By(fmt.Sprintf("Checking that the memory file has been created: %s", memoryFile))
+				pod, err := f.GetDatabasePod(memcached.ObjectMeta)
+				Expect(err).To(BeNil())
+				_, err = exec_util.ExecIntoPod(f.RestConfig(), pod,
+					exec_util.Command("test", "-e", memoryFile))
+				Expect(err).To(BeNil())
+			}
+
+			It("works with EmptyDir", func() {
+				testit(&core.VolumeSource{
+					EmptyDir: &core.EmptyDirVolumeSource{},
+				})
+			})
+
+			// This only works on clusters which have the PMEM-CSI driver installed.
+			// Replace PIt with It to run it.
+			PIt("works with PMEM-CSI", func() {
+				testit(&core.VolumeSource{
+					CSI: &core.CSIVolumeSource{
+						Driver: "pmem-csi.intel.com",
+						VolumeAttributes: map[string]string{
+							"size": fmt.Sprintf("%dMi", sizeInMB),
+						},
+					},
+				})
+			})
+		})
+
 	})
 })

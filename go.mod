@@ -18,12 +18,12 @@ require (
 	k8s.io/apiserver v0.18.3
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kube-aggregator v0.18.3
-	kmodules.xyz/client-go v0.0.0-20200525112657-3b8ebfcb5e19
+	kmodules.xyz/client-go v0.0.0-20200525195850-2fd180961371
 	kmodules.xyz/custom-resources v0.0.0-20200525025248-c2afe49bbec6
 	kmodules.xyz/monitoring-agent-api v0.0.0-20200525002655-2aa50cb10ce9
 	kmodules.xyz/offshoot-api v0.0.0-20200521035628-e135bf07b226
 	kmodules.xyz/webhook-runtime v0.0.0-20200522123600-ca70a7e28ed0
-	kubedb.dev/apimachinery v0.14.0-alpha.4
+	kubedb.dev/apimachinery v0.14.0-alpha.5
 )
 
 replace (

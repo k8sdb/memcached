@@ -36,7 +36,7 @@ var (
 type Framework struct {
 	restConfig       *rest.Config
 	kubeClient       kubernetes.Interface
-	apiExtKubeClient crd_cs.ApiextensionsV1beta1Interface
+	crdClient        crd_cs.ApiextensionsV1beta1Interface
 	dbClient         cs.Interface
 	kaClient         ka.Interface
 	tunnel           *portforward.Tunnel
@@ -58,7 +58,7 @@ func New(
 	return &Framework{
 		restConfig:       restConfig,
 		kubeClient:       kubeClient,
-		apiExtKubeClient: apiExtKubeClient,
+		crdClient:        apiExtKubeClient,
 		dbClient:         dbClient,
 		kaClient:         kaClient,
 		appCatalogClient: appCatalogClient,

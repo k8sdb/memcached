@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package framework
 
 import (
@@ -38,20 +39,20 @@ const (
 	ServiceAccount      = "ServiceAccount"
 )
 
-func (i *Invocation) ServiceAccount() *core.ServiceAccount {
+func (fi *Invocation) ServiceAccount() *core.ServiceAccount {
 	return &core.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(i.app + "-mc"),
-			Namespace: i.namespace,
+			Name:      rand.WithUniqSuffix(fi.app + "-mc"),
+			Namespace: fi.namespace,
 		},
 	}
 }
 
-func (i *Invocation) RoleForElasticsearch(meta metav1.ObjectMeta) *rbac.Role {
+func (fi *Invocation) RoleForMemcached(meta metav1.ObjectMeta) *rbac.Role {
 	return &rbac.Role{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(i.app + "-mc"),
-			Namespace: i.namespace,
+			Name:      rand.WithUniqSuffix(fi.app + "-mc"),
+			Namespace: fi.namespace,
 		},
 		Rules: []rbac.PolicyRule{
 			{
@@ -72,11 +73,11 @@ func (i *Invocation) RoleForElasticsearch(meta metav1.ObjectMeta) *rbac.Role {
 	}
 }
 
-func (i *Invocation) RoleForSnapshot(meta metav1.ObjectMeta) *rbac.Role {
+func (fi *Invocation) RoleForSnapshot(meta metav1.ObjectMeta) *rbac.Role {
 	return &rbac.Role{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(i.app + "-mc"),
-			Namespace: i.namespace,
+			Name:      rand.WithUniqSuffix(fi.app + "-mc"),
+			Namespace: fi.namespace,
 		},
 		Rules: []rbac.PolicyRule{
 			{
@@ -97,11 +98,11 @@ func (i *Invocation) RoleForSnapshot(meta metav1.ObjectMeta) *rbac.Role {
 	}
 }
 
-func (i *Invocation) RoleBinding(saName string, roleName string) *rbac.RoleBinding {
+func (fi *Invocation) RoleBinding(saName string, roleName string) *rbac.RoleBinding {
 	return &rbac.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      rand.WithUniqSuffix(i.app + "-mc"),
-			Namespace: i.namespace,
+			Name:      rand.WithUniqSuffix(fi.app + "-mc"),
+			Namespace: fi.namespace,
 		},
 		RoleRef: rbac.RoleRef{
 			APIGroup: rbacApiGroup,
@@ -111,7 +112,7 @@ func (i *Invocation) RoleBinding(saName string, roleName string) *rbac.RoleBindi
 		Subjects: []rbac.Subject{
 			{
 				Kind:      ServiceAccount,
-				Namespace: i.namespace,
+				Namespace: fi.namespace,
 				Name:      saName,
 			},
 		},

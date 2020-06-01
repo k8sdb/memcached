@@ -13,11 +13,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package framework
 
 import (
 	"context"
-	"time"
 
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
@@ -35,7 +35,7 @@ func (f *Framework) EventuallyCRD() GomegaAsyncAssertion {
 
 			return nil
 		},
-		time.Minute*2,
-		time.Second*10,
+		Timeout,
+		RetryInterval,
 	)
 }

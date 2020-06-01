@@ -13,12 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package framework
 
 import (
 	"context"
 	"fmt"
-	"time"
 
 	. "github.com/onsi/gomega"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -37,8 +37,8 @@ func (f *Framework) EventuallyAppBinding(meta metav1.ObjectMeta) GomegaAsyncAsse
 			}
 			return true
 		},
-		time.Minute*5,
-		time.Second*5,
+		Timeout,
+		RetryInterval,
 	)
 }
 

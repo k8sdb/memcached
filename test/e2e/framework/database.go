@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package framework
 
 import (
@@ -83,8 +84,8 @@ func (f *Framework) EventuallySetItem(meta metav1.ObjectMeta, key, value string)
 			err = client.Set(&memcache.Item{Key: key, Value: []byte(value)})
 			return err == nil
 		},
-		time.Minute*5,
-		time.Second*5,
+		Timeout,
+		RetryInterval,
 	)
 }
 
@@ -102,16 +103,15 @@ func (f *Framework) EventuallyGetItem(meta metav1.ObjectMeta, key string) Gomega
 			}
 			return string(item.Value)
 		},
-		time.Minute*5,
-		time.Second*5,
+		Timeout,
+		RetryInterval,
 	)
 }
 
-func (f *Invocation) EventuallyConfigSourceVolumeMounted(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-
+func (fi *Invocation) EventuallyConfigSourceVolumeMounted(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() bool {
-			pod, err := f.GetDatabasePod(meta)
+			pod, err := fi.GetDatabasePod(meta)
 			if err != nil {
 				return false
 			}
@@ -127,13 +127,12 @@ func (f *Invocation) EventuallyConfigSourceVolumeMounted(meta metav1.ObjectMeta)
 			}
 			return false
 		},
-		time.Minute*5,
-		time.Second*5,
+		Timeout,
+		RetryInterval,
 	)
 }
 
 func (f *Framework) EventuallyMemcachedConfigs(meta metav1.ObjectMeta) GomegaAsyncAssertion {
-
 	return Eventually(
 		func() string {
 
@@ -141,7 +140,7 @@ func (f *Framework) EventuallyMemcachedConfigs(meta metav1.ObjectMeta) GomegaAsy
 			ret := make([]string, 0)
 			return strings.Join(ret, " ")
 		},
-		time.Minute*5,
-		time.Second*5,
+		Timeout,
+		RetryInterval,
 	)
 }

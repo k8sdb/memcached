@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package e2e_test
 
 import (
@@ -24,7 +25,6 @@ import (
 	"kubedb.dev/memcached/test/e2e/framework"
 
 	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/go/log"
 	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -67,10 +67,6 @@ var _ = Describe("Memcached", func() {
 
 		By("Delete memcached")
 		err = f.DeleteMemcached(memcached.ObjectMeta)
-		if err != nil && kerr.IsNotFound(err) {
-			// Memcached was not created. Hence, rest of cleanup is not necessary.
-			return
-		}
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Wait for memcached to be deleted")
@@ -144,28 +140,11 @@ var _ = Describe("Memcached", func() {
 				})
 
 				It("should start and resume successfully", func() {
-					//shouldTakeSnapshot()
 					createAndWaitForRunning()
-					By("Check if Memcached " + memcached.Name + " exists.")
-					_, err := f.GetMemcached(memcached.ObjectMeta)
-					if err != nil {
-						if kerr.IsNotFound(err) {
-							// Memcached was not created. Hence, rest of cleanup is not necessary.
-							return
-						}
-						Expect(err).NotTo(HaveOccurred())
-					}
 
 					By("Delete memcached: " + memcached.Name)
 					err = f.DeleteMemcached(memcached.ObjectMeta)
-					if err != nil {
-						if kerr.IsNotFound(err) {
-							// Memcached was not created. Hence, rest of cleanup is not necessary.
-							log.Infof("Skipping rest of cleanup. Reason: Memcached %s is not found.", memcached.Name)
-							return
-						}
-						Expect(err).NotTo(HaveOccurred())
-					}
+					Expect(err).NotTo(HaveOccurred())
 
 					By("Wait for memcached to be deleted")
 					f.EventuallyMemcached(memcached.ObjectMeta).Should(BeFalse())
@@ -185,7 +164,7 @@ var _ = Describe("Memcached", func() {
 				BeforeEach(func() {
 					customSAForDB = f.ServiceAccount()
 					memcached.Spec.PodTemplate.Spec.ServiceAccountName = customSAForDB.Name
-					customRoleForDB = f.RoleForElasticsearch(memcached.ObjectMeta)
+					customRoleForDB = f.RoleForMemcached(memcached.ObjectMeta)
 					customRoleBindingForDB = f.RoleBinding(customSAForDB.Name, customRoleForDB.Name)
 				})
 				It("should and Run DB successfully", func() {
@@ -218,7 +197,7 @@ var _ = Describe("Memcached", func() {
 		Context("Resume", func() {
 
 			Context("Super Fast User - Create-Delete-Create-Delete-Create ", func() {
-				It("should resume DormantDatabase successfully", func() {
+				It("should resume Memcached successfully", func() {
 					// Create and wait for running Memcached
 					createAndWaitForRunning()
 
@@ -256,7 +235,7 @@ var _ = Describe("Memcached", func() {
 			})
 
 			Context("-", func() {
-				It("should resume DormantDatabase successfully", func() {
+				It("should resume Memcached successfully", func() {
 					// Create and wait for running Memcached
 					createAndWaitForRunning()
 					By("Delete memcached")
@@ -359,7 +338,7 @@ var _ = Describe("Memcached", func() {
 				})
 			})
 
-			Context("with TerminationPolicyHalt)", func() {
+			Context("with TerminationPolicyHalt", func() {
 				var shouldRunWithTerminationHalt = func() {
 					shouldRunWithTermination()
 
@@ -408,7 +387,7 @@ var _ = Describe("Memcached", func() {
 					f.EventuallyGetItem(memcached.ObjectMeta, key).Should(BeEquivalentTo(value))
 				}
 
-				It("should create dormantdatabase successfully", shouldRunWithTerminationHalt)
+				It("should create Memcached successfully", shouldRunWithTerminationHalt)
 			})
 
 			Context("with TerminationPolicyDelete", func() {

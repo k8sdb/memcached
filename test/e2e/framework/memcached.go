@@ -13,12 +13,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package framework
 
 import (
 	"context"
 	"fmt"
-	"time"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
@@ -29,20 +29,18 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 const (
 	kindEviction = "Eviction"
 )
 
-func (f *Invocation) Memcached() *api.Memcached {
+func (fi *Invocation) Memcached() *api.Memcached {
 	return &api.Memcached{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      rand.WithUniqSuffix("memcached"),
-			Namespace: f.namespace,
-			Labels: map[string]string{
-				"app": f.app,
-			},
+			Namespace: fi.namespace,
 		},
 		Spec: api.MemcachedSpec{
 			Version:           DBCatalogName,
@@ -70,7 +68,11 @@ func (f *Framework) PatchMemcached(meta metav1.ObjectMeta, transform func(*api.M
 }
 
 func (f *Framework) DeleteMemcached(meta metav1.ObjectMeta) error {
-	return f.dbClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Delete(context.TODO(), meta.Name, deleteInForeground())
+	err := f.dbClient.KubedbV1alpha1().Memcacheds(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInForeground())
+	if !kerr.IsNotFound(err) {
+		return err
+	}
+	return nil
 }
 
 func (f *Framework) EventuallyMemcached(meta metav1.ObjectMeta) GomegaAsyncAssertion {
@@ -85,8 +87,8 @@ func (f *Framework) EventuallyMemcached(meta metav1.ObjectMeta) GomegaAsyncAsser
 			}
 			return true
 		},
-		time.Minute*13,
-		time.Second*5,
+		Timeout,
+		RetryInterval,
 	)
 }
 
@@ -97,8 +99,8 @@ func (f *Framework) EventuallyMemcachedPhase(meta metav1.ObjectMeta) GomegaAsync
 			Expect(err).NotTo(HaveOccurred())
 			return db.Status.Phase
 		},
-		time.Minute*5,
-		time.Second*5,
+		Timeout,
+		RetryInterval,
 	)
 }
 
@@ -109,8 +111,8 @@ func (f *Framework) EventuallyMemcachedRunning(meta metav1.ObjectMeta) GomegaAsy
 			Expect(err).NotTo(HaveOccurred())
 			return memcached.Status.Phase == api.DatabasePhaseRunning
 		},
-		time.Minute*13,
-		time.Second*5,
+		Timeout,
+		RetryInterval,
 	)
 }
 
@@ -128,7 +130,7 @@ func (f *Framework) CleanMemcached() {
 			fmt.Printf("error Patching Memcached. error: %v", err)
 		}
 	}
-	if err := f.dbClient.KubedbV1alpha1().Memcacheds(f.namespace).DeleteCollection(context.TODO(), deleteInForeground(), metav1.ListOptions{}); err != nil {
+	if err := f.dbClient.KubedbV1alpha1().Memcacheds(f.namespace).DeleteCollection(context.TODO(), meta_util.DeleteInForeground(), metav1.ListOptions{}); err != nil {
 		fmt.Printf("error in deletion of Memcached. Error: %v", err)
 	}
 }
@@ -157,7 +159,7 @@ func (f *Framework) EvictPodsFromDeployment(meta metav1.ObjectMeta) error {
 	if podCount < 1 {
 		return fmt.Errorf("found no pod in namespace %s with given labels", meta.Namespace)
 	}
-	foreground := deleteInForeground()
+	foreground := meta_util.DeleteInForeground()
 	eviction := &policy.Eviction{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: policy.SchemeGroupVersion.String(),

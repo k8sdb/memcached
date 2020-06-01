@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package framework
 
 import (
@@ -20,6 +21,7 @@ import (
 
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 )
 
 func (f *Framework) Namespace() string {
@@ -37,5 +39,5 @@ func (f *Framework) CreateNamespace() error {
 }
 
 func (f *Framework) DeleteNamespace() error {
-	return f.kubeClient.CoreV1().Namespaces().Delete(context.TODO(), f.namespace, deleteInForeground())
+	return f.kubeClient.CoreV1().Namespaces().Delete(context.TODO(), f.namespace, meta_util.DeleteInForeground())
 }

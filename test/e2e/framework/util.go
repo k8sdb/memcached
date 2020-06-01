@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package framework
 
 import (
@@ -20,7 +21,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
 
@@ -30,17 +30,8 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	meta_util "kmodules.xyz/client-go/meta"
 )
-
-//func deleteInBackground() *metav1.DeleteOptions {
-//	policy := metav1.DeletePropagationBackground
-//	return &metav1.DeleteOptions{PropagationPolicy: &policy}
-//}
-
-func deleteInForeground() metav1.DeleteOptions {
-	policy := metav1.DeletePropagationForeground
-	return metav1.DeleteOptions{PropagationPolicy: &policy}
-}
 
 func (fi *Invocation) GetPod(meta metav1.ObjectMeta) (*core.Pod, error) {
 	podList, err := fi.kubeClient.CoreV1().Pods(meta.Namespace).List(context.TODO(), metav1.ListOptions{})
@@ -61,15 +52,15 @@ type MemcdConfig struct {
 	Alias string
 }
 
-func (f *Invocation) GetCustomConfig(configs []MemcdConfig) *core.ConfigMap {
+func (fi *Invocation) GetCustomConfig(configs []MemcdConfig) *core.ConfigMap {
 	data := make([]string, 0)
 	for _, cfg := range configs {
 		data = append(data, cfg.Name+" = "+cfg.Value)
 	}
 	return &core.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      f.app,
-			Namespace: f.namespace,
+			Name:      fi.app,
+			Namespace: fi.namespace,
 		},
 		Data: map[string]string{
 			"memcached.conf": strings.Join(data, "\n"),
@@ -77,20 +68,20 @@ func (f *Invocation) GetCustomConfig(configs []MemcdConfig) *core.ConfigMap {
 	}
 }
 
-func (f *Invocation) CreateConfigMap(obj *core.ConfigMap) error {
-	_, err := f.kubeClient.CoreV1().ConfigMaps(obj.Namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
+func (fi *Invocation) CreateConfigMap(obj *core.ConfigMap) error {
+	_, err := fi.kubeClient.CoreV1().ConfigMaps(obj.Namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
 	return err
 }
 
-func (f *Invocation) DeleteConfigMap(meta metav1.ObjectMeta) error {
-	err := f.kubeClient.CoreV1().ConfigMaps(meta.Namespace).Delete(context.TODO(), meta.Name, deleteInForeground())
+func (fi *Invocation) DeleteConfigMap(meta metav1.ObjectMeta) error {
+	err := fi.kubeClient.CoreV1().ConfigMaps(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInForeground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}
 	return nil
 }
 
-func (f *Framework) EventuallyWipedOut(meta metav1.ObjectMeta) GomegaAsyncAssertion {
+func (f *Invocation) EventuallyWipedOut(meta metav1.ObjectMeta) GomegaAsyncAssertion {
 	return Eventually(
 		func() error {
 			labelMap := map[string]string{
@@ -127,7 +118,7 @@ func (f *Framework) EventuallyWipedOut(meta metav1.ObjectMeta) GomegaAsyncAssert
 				return fmt.Errorf("secrets have not wiped out yet")
 			}
 
-			// check if appbinds are wiped out
+			// check if appbindings are wiped out
 			appBindingList, err := f.appCatalogClient.AppBindings(meta.Namespace).List(
 				context.TODO(),
 				metav1.ListOptions{
@@ -143,8 +134,8 @@ func (f *Framework) EventuallyWipedOut(meta metav1.ObjectMeta) GomegaAsyncAssert
 
 			return nil
 		},
-		time.Minute*10,
-		time.Second*5,
+		Timeout,
+		RetryInterval,
 	)
 }
 

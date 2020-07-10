@@ -19,7 +19,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	"context"
 	"time"
 
 	v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -39,15 +38,15 @@ type RestoreSessionsGetter interface {
 
 // RestoreSessionInterface has methods to work with RestoreSession resources.
 type RestoreSessionInterface interface {
-	Create(ctx context.Context, restoreSession *v1beta1.RestoreSession, opts v1.CreateOptions) (*v1beta1.RestoreSession, error)
-	Update(ctx context.Context, restoreSession *v1beta1.RestoreSession, opts v1.UpdateOptions) (*v1beta1.RestoreSession, error)
-	UpdateStatus(ctx context.Context, restoreSession *v1beta1.RestoreSession, opts v1.UpdateOptions) (*v1beta1.RestoreSession, error)
-	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
-	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.RestoreSession, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1beta1.RestoreSessionList, error)
-	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.RestoreSession, err error)
+	Create(*v1beta1.RestoreSession) (*v1beta1.RestoreSession, error)
+	Update(*v1beta1.RestoreSession) (*v1beta1.RestoreSession, error)
+	UpdateStatus(*v1beta1.RestoreSession) (*v1beta1.RestoreSession, error)
+	Delete(name string, options *v1.DeleteOptions) error
+	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
+	Get(name string, options v1.GetOptions) (*v1beta1.RestoreSession, error)
+	List(opts v1.ListOptions) (*v1beta1.RestoreSessionList, error)
+	Watch(opts v1.ListOptions) (watch.Interface, error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.RestoreSession, err error)
 	RestoreSessionExpansion
 }
 
@@ -66,20 +65,20 @@ func newRestoreSessions(c *StashV1beta1Client, namespace string) *restoreSession
 }
 
 // Get takes name of the restoreSession, and returns the corresponding restoreSession object, and an error if there is any.
-func (c *restoreSessions) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.RestoreSession, err error) {
+func (c *restoreSessions) Get(name string, options v1.GetOptions) (result *v1beta1.RestoreSession, err error) {
 	result = &v1beta1.RestoreSession{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("restoresessions").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of RestoreSessions that match those selectors.
-func (c *restoreSessions) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.RestoreSessionList, err error) {
+func (c *restoreSessions) List(opts v1.ListOptions) (result *v1beta1.RestoreSessionList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -90,13 +89,13 @@ func (c *restoreSessions) List(ctx context.Context, opts v1.ListOptions) (result
 		Resource("restoresessions").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested restoreSessions.
-func (c *restoreSessions) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+func (c *restoreSessions) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -107,90 +106,87 @@ func (c *restoreSessions) Watch(ctx context.Context, opts v1.ListOptions) (watch
 		Resource("restoresessions").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch(ctx)
+		Watch()
 }
 
 // Create takes the representation of a restoreSession and creates it.  Returns the server's representation of the restoreSession, and an error, if there is any.
-func (c *restoreSessions) Create(ctx context.Context, restoreSession *v1beta1.RestoreSession, opts v1.CreateOptions) (result *v1beta1.RestoreSession, err error) {
+func (c *restoreSessions) Create(restoreSession *v1beta1.RestoreSession) (result *v1beta1.RestoreSession, err error) {
 	result = &v1beta1.RestoreSession{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("restoresessions").
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(restoreSession).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Update takes the representation of a restoreSession and updates it. Returns the server's representation of the restoreSession, and an error, if there is any.
-func (c *restoreSessions) Update(ctx context.Context, restoreSession *v1beta1.RestoreSession, opts v1.UpdateOptions) (result *v1beta1.RestoreSession, err error) {
+func (c *restoreSessions) Update(restoreSession *v1beta1.RestoreSession) (result *v1beta1.RestoreSession, err error) {
 	result = &v1beta1.RestoreSession{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("restoresessions").
 		Name(restoreSession.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(restoreSession).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *restoreSessions) UpdateStatus(ctx context.Context, restoreSession *v1beta1.RestoreSession, opts v1.UpdateOptions) (result *v1beta1.RestoreSession, err error) {
+
+func (c *restoreSessions) UpdateStatus(restoreSession *v1beta1.RestoreSession) (result *v1beta1.RestoreSession, err error) {
 	result = &v1beta1.RestoreSession{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("restoresessions").
 		Name(restoreSession.Name).
 		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(restoreSession).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Delete takes name of the restoreSession and deletes it. Returns an error if one occurs.
-func (c *restoreSessions) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+func (c *restoreSessions) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("restoresessions").
 		Name(name).
-		Body(&opts).
-		Do(ctx).
+		Body(options).
+		Do().
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *restoreSessions) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+func (c *restoreSessions) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("restoresessions").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
+		Body(options).
+		Do().
 		Error()
 }
 
 // Patch applies the patch and returns the patched restoreSession.
-func (c *restoreSessions) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.RestoreSession, err error) {
+func (c *restoreSessions) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.RestoreSession, err error) {
 	result = &v1beta1.RestoreSession{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("restoresessions").
-		Name(name).
 		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
+		Name(name).
 		Body(data).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }

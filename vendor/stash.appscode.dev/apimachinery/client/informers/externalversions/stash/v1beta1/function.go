@@ -19,7 +19,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	"context"
 	time "time"
 
 	stashv1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -62,13 +61,13 @@ func NewFilteredFunctionInformer(client versioned.Interface, resyncPeriod time.D
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StashV1beta1().Functions().List(context.TODO(), options)
+				return client.StashV1beta1().Functions().List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StashV1beta1().Functions().Watch(context.TODO(), options)
+				return client.StashV1beta1().Functions().Watch(options)
 			},
 		},
 		&stashv1beta1.Function{},

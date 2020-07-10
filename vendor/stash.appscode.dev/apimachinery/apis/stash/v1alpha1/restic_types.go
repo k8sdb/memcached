@@ -86,7 +86,6 @@ type FileGroup struct {
 	RetentionPolicyName string `json:"retentionPolicyName,omitempty" protobuf:"bytes,3,opt,name=retentionPolicyName"`
 }
 
-// +kubebuilder:validation:Enum=online;offline
 type BackupType string
 
 const (
@@ -94,7 +93,6 @@ const (
 	BackupOffline BackupType = "offline" // injects init container
 )
 
-// +kubebuilder:validation:Enum=--keep-last;--keep-hourly;--keep-daily;--keep-weekly;--keep-monthly;--keep-yearly;--keep-tag
 type RetentionStrategy string
 
 const (

@@ -19,7 +19,7 @@ package v1beta1
 import (
 	"stash.appscode.dev/apimachinery/api/crds"
 
-	"kmodules.xyz/client-go/apiextensions"
+	apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
 func (_ Function) CustomResourceDefinition() *apiextensions.CustomResourceDefinition {

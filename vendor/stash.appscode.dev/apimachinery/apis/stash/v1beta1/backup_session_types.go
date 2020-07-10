@@ -50,7 +50,6 @@ type BackupSessionSpec struct {
 	Invoker BackupInvokerRef `json:"invoker,omitempty" protobuf:"bytes,1,opt,name=invoker"`
 }
 
-// +kubebuilder:validation:Enum=Pending;Running;Succeeded;Failed;Unknown
 type BackupSessionPhase string
 
 const (
@@ -61,7 +60,6 @@ const (
 	BackupSessionUnknown   BackupSessionPhase = "Unknown"
 )
 
-// +kubebuilder:validation:Enum=Succeeded;Failed
 type HostBackupPhase string
 
 const (
@@ -69,7 +67,6 @@ const (
 	HostBackupFailed    HostBackupPhase = "Failed"
 )
 
-// +kubebuilder:validation:Enum=Succeeded;Running;Failed
 type TargetPhase string
 
 const (

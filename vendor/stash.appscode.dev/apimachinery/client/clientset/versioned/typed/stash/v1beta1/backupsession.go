@@ -19,7 +19,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	"context"
 	"time"
 
 	v1beta1 "stash.appscode.dev/apimachinery/apis/stash/v1beta1"
@@ -39,15 +38,15 @@ type BackupSessionsGetter interface {
 
 // BackupSessionInterface has methods to work with BackupSession resources.
 type BackupSessionInterface interface {
-	Create(ctx context.Context, backupSession *v1beta1.BackupSession, opts v1.CreateOptions) (*v1beta1.BackupSession, error)
-	Update(ctx context.Context, backupSession *v1beta1.BackupSession, opts v1.UpdateOptions) (*v1beta1.BackupSession, error)
-	UpdateStatus(ctx context.Context, backupSession *v1beta1.BackupSession, opts v1.UpdateOptions) (*v1beta1.BackupSession, error)
-	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
-	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.BackupSession, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1beta1.BackupSessionList, error)
-	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.BackupSession, err error)
+	Create(*v1beta1.BackupSession) (*v1beta1.BackupSession, error)
+	Update(*v1beta1.BackupSession) (*v1beta1.BackupSession, error)
+	UpdateStatus(*v1beta1.BackupSession) (*v1beta1.BackupSession, error)
+	Delete(name string, options *v1.DeleteOptions) error
+	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
+	Get(name string, options v1.GetOptions) (*v1beta1.BackupSession, error)
+	List(opts v1.ListOptions) (*v1beta1.BackupSessionList, error)
+	Watch(opts v1.ListOptions) (watch.Interface, error)
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.BackupSession, err error)
 	BackupSessionExpansion
 }
 
@@ -66,20 +65,20 @@ func newBackupSessions(c *StashV1beta1Client, namespace string) *backupSessions 
 }
 
 // Get takes name of the backupSession, and returns the corresponding backupSession object, and an error if there is any.
-func (c *backupSessions) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.BackupSession, err error) {
+func (c *backupSessions) Get(name string, options v1.GetOptions) (result *v1beta1.BackupSession, err error) {
 	result = &v1beta1.BackupSession{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("backupsessions").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of BackupSessions that match those selectors.
-func (c *backupSessions) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.BackupSessionList, err error) {
+func (c *backupSessions) List(opts v1.ListOptions) (result *v1beta1.BackupSessionList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -90,13 +89,13 @@ func (c *backupSessions) List(ctx context.Context, opts v1.ListOptions) (result 
 		Resource("backupsessions").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested backupSessions.
-func (c *backupSessions) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+func (c *backupSessions) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -107,90 +106,87 @@ func (c *backupSessions) Watch(ctx context.Context, opts v1.ListOptions) (watch.
 		Resource("backupsessions").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch(ctx)
+		Watch()
 }
 
 // Create takes the representation of a backupSession and creates it.  Returns the server's representation of the backupSession, and an error, if there is any.
-func (c *backupSessions) Create(ctx context.Context, backupSession *v1beta1.BackupSession, opts v1.CreateOptions) (result *v1beta1.BackupSession, err error) {
+func (c *backupSessions) Create(backupSession *v1beta1.BackupSession) (result *v1beta1.BackupSession, err error) {
 	result = &v1beta1.BackupSession{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("backupsessions").
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(backupSession).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Update takes the representation of a backupSession and updates it. Returns the server's representation of the backupSession, and an error, if there is any.
-func (c *backupSessions) Update(ctx context.Context, backupSession *v1beta1.BackupSession, opts v1.UpdateOptions) (result *v1beta1.BackupSession, err error) {
+func (c *backupSessions) Update(backupSession *v1beta1.BackupSession) (result *v1beta1.BackupSession, err error) {
 	result = &v1beta1.BackupSession{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("backupsessions").
 		Name(backupSession.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(backupSession).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *backupSessions) UpdateStatus(ctx context.Context, backupSession *v1beta1.BackupSession, opts v1.UpdateOptions) (result *v1beta1.BackupSession, err error) {
+
+func (c *backupSessions) UpdateStatus(backupSession *v1beta1.BackupSession) (result *v1beta1.BackupSession, err error) {
 	result = &v1beta1.BackupSession{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("backupsessions").
 		Name(backupSession.Name).
 		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(backupSession).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }
 
 // Delete takes name of the backupSession and deletes it. Returns an error if one occurs.
-func (c *backupSessions) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
+func (c *backupSessions) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("backupsessions").
 		Name(name).
-		Body(&opts).
-		Do(ctx).
+		Body(options).
+		Do().
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *backupSessions) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+func (c *backupSessions) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("backupsessions").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
+		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
+		Body(options).
+		Do().
 		Error()
 }
 
 // Patch applies the patch and returns the patched backupSession.
-func (c *backupSessions) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.BackupSession, err error) {
+func (c *backupSessions) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.BackupSession, err error) {
 	result = &v1beta1.BackupSession{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("backupsessions").
-		Name(name).
 		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
+		Name(name).
 		Body(data).
-		Do(ctx).
+		Do().
 		Into(result)
 	return
 }

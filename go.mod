@@ -18,7 +18,7 @@ require (
 	k8s.io/apiserver v0.18.3
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/kube-aggregator v0.18.3
-	kmodules.xyz/client-go v0.0.0-20200807031423-96aa0172979c
+	kmodules.xyz/client-go v0.0.0-20200807163543-64a96054c515
 	kmodules.xyz/custom-resources v0.0.0-20200604135349-9e9f5c4fdba9
 	kmodules.xyz/monitoring-agent-api v0.0.0-20200525002655-2aa50cb10ce9
 	kmodules.xyz/offshoot-api v0.0.0-20200521035628-e135bf07b226

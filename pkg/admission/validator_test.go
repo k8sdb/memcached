@@ -28,7 +28,6 @@ import (
 
 	"github.com/appscode/go/types"
 	admission "k8s.io/api/admission/v1beta1"
-	apps "k8s.io/api/apps/v1"
 	authenticationV1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -239,11 +238,8 @@ func sampleMemcached() api.Memcached {
 			},
 		},
 		Spec: api.MemcachedSpec{
-			Version:  "1.5.4",
-			Replicas: types.Int32P(3),
-			UpdateStrategy: apps.DeploymentStrategy{
-				Type: apps.RollingUpdateDeploymentStrategyType,
-			},
+			Version:           "1.5.4",
+			Replicas:          types.Int32P(3),
 			TerminationPolicy: api.TerminationPolicyDoNotTerminate,
 			DataVolume: &v1.VolumeSource{
 				CSI: &v1.CSIVolumeSource{

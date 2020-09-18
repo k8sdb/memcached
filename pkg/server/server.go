@@ -29,6 +29,7 @@ import (
 	"kubedb.dev/memcached/pkg/controller"
 
 	"github.com/appscode/go/types"
+	license "go.bytebuilders.dev/license-verifier/kubernetes"
 	admission "k8s.io/api/admission/v1beta1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -140,6 +141,8 @@ func (c completedConfig) New() (*MemcachedServer, error) {
 				Resources: []string{api.ResourcePluralMemcached},
 			})
 	}
+
+	license.NewLicenseEnforcer(c.OperatorConfig.ClientConfig, c.OperatorConfig.LicenseFile).Install(genericServer.Handler.NonGoRestfulMux)
 
 	ctrl, err := c.OperatorConfig.New()
 	if err != nil {

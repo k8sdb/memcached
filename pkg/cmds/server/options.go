@@ -22,6 +22,7 @@ import (
 
 	cs "kubedb.dev/apimachinery/client/clientset/versioned"
 	kubedbinformers "kubedb.dev/apimachinery/client/informers/externalversions"
+	"kubedb.dev/apimachinery/pkg/eventer"
 	"kubedb.dev/memcached/pkg/controller"
 
 	prom "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/typed/monitoring/v1"
@@ -129,6 +130,7 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.OperatorConfig) error {
 	}
 	cfg.KubeInformerFactory = informers.NewSharedInformerFactory(cfg.KubeClient, cfg.ResyncPeriod)
 	cfg.KubedbInformerFactory = kubedbinformers.NewSharedInformerFactory(cfg.DBClient, cfg.ResyncPeriod)
-
+	// Create event recorder
+	cfg.Recorder = eventer.NewEventRecorder(cfg.KubeClient, "Memcached operator")
 	return nil
 }

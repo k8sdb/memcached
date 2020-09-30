@@ -23,11 +23,9 @@ require (
 	kmodules.xyz/client-go v0.0.0-20200929030759-cce6a3c623c1
 	kmodules.xyz/custom-resources v0.0.0-20200922210108-70f2815a43bb
 	kmodules.xyz/monitoring-agent-api v0.0.0-20200922204510-b8b5610e5385
-	kmodules.xyz/objectstore-api v0.0.0-20200922210707-59bab27e5d41 // indirect
 	kmodules.xyz/offshoot-api v0.0.0-20200922211229-36acc531abab
-	kmodules.xyz/prober v0.0.0-20200922212142-743a6514664e // indirect
 	kmodules.xyz/webhook-runtime v0.0.0-20200922211931-8337935590de
-	kubedb.dev/apimachinery v0.14.0-beta.3.0.20200922060223-53b422770a18
+	kubedb.dev/apimachinery v0.14.0-beta.3.0.20200929172147-60ada14c6d75
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d

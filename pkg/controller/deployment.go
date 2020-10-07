@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	"kubedb.dev/apimachinery/pkg/eventer"
 
 	apps "k8s.io/api/apps/v1"
@@ -87,37 +87,37 @@ func (c *Controller) checkDeployment(memcached *api.Memcached) error {
 	return nil
 }
 
-func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deployment, kutil.VerbType, error) {
+func (c *Controller) createDeployment(db *api.Memcached) (*apps.Deployment, kutil.VerbType, error) {
 	deploymentMeta := metav1.ObjectMeta{
-		Name:      memcached.OffshootName(),
-		Namespace: memcached.Namespace,
+		Name:      db.OffshootName(),
+		Namespace: db.Namespace,
 	}
 
-	owner := metav1.NewControllerRef(memcached, api.SchemeGroupVersion.WithKind(api.ResourceKindMemcached))
+	owner := metav1.NewControllerRef(db, api.SchemeGroupVersion.WithKind(api.ResourceKindMemcached))
 
-	memcachedVersion, err := c.ExtClient.CatalogV1alpha1().MemcachedVersions().Get(context.TODO(), string(memcached.Spec.Version), metav1.GetOptions{})
+	memcachedVersion, err := c.DBClient.CatalogV1alpha1().MemcachedVersions().Get(context.TODO(), string(db.Spec.Version), metav1.GetOptions{})
 	if err != nil {
 		return nil, kutil.VerbUnchanged, err
 	}
 
 	return app_util.CreateOrPatchDeployment(context.TODO(), c.Client, deploymentMeta, func(in *apps.Deployment) *apps.Deployment {
-		in.Labels = memcached.OffshootLabels()
-		in.Annotations = memcached.Spec.PodTemplate.Controller.Annotations
+		in.Labels = db.OffshootLabels()
+		in.Annotations = db.Spec.PodTemplate.Controller.Annotations
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
 
-		in.Spec.Replicas = memcached.Spec.Replicas
+		in.Spec.Replicas = db.Spec.Replicas
 		in.Spec.Template.Labels = in.Labels
 		in.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: memcached.OffshootSelectors(),
+			MatchLabels: db.OffshootSelectors(),
 		}
-		in.Spec.Template.Labels = memcached.OffshootSelectors()
-		in.Spec.Template.Annotations = memcached.Spec.PodTemplate.Annotations
-		in.Spec.Template.Spec.InitContainers = core_util.UpsertContainers(in.Spec.Template.Spec.InitContainers, memcached.Spec.PodTemplate.Spec.InitContainers)
+		in.Spec.Template.Labels = db.OffshootSelectors()
+		in.Spec.Template.Annotations = db.Spec.PodTemplate.Annotations
+		in.Spec.Template.Spec.InitContainers = core_util.UpsertContainers(in.Spec.Template.Spec.InitContainers, db.Spec.PodTemplate.Spec.InitContainers)
 		in.Spec.Template.Spec.Containers = core_util.UpsertContainer(in.Spec.Template.Spec.Containers, core.Container{
 			Name:            api.ResourceSingularMemcached,
 			Image:           memcachedVersion.Spec.DB.Image,
 			ImagePullPolicy: core.PullIfNotPresent,
-			Args:            memcached.Spec.PodTemplate.Spec.Args,
+			Args:            db.Spec.PodTemplate.Spec.Args,
 			Ports: []core.ContainerPort{
 				{
 					Name:          "db",
@@ -125,47 +125,47 @@ func (c *Controller) createDeployment(memcached *api.Memcached) (*apps.Deploymen
 					Protocol:      core.ProtocolTCP,
 				},
 			},
-			Resources:      memcached.Spec.PodTemplate.Spec.Resources,
-			LivenessProbe:  memcached.Spec.PodTemplate.Spec.LivenessProbe,
-			ReadinessProbe: memcached.Spec.PodTemplate.Spec.ReadinessProbe,
-			Lifecycle:      memcached.Spec.PodTemplate.Spec.Lifecycle,
+			Resources:      db.Spec.PodTemplate.Spec.Resources,
+			LivenessProbe:  db.Spec.PodTemplate.Spec.LivenessProbe,
+			ReadinessProbe: db.Spec.PodTemplate.Spec.ReadinessProbe,
+			Lifecycle:      db.Spec.PodTemplate.Spec.Lifecycle,
 		})
-		if memcached.GetMonitoringVendor() == mona.VendorPrometheus {
+		if db.Spec.Monitor != nil && db.Spec.Monitor.Agent.Vendor() == mona.VendorPrometheus {
 			in.Spec.Template.Spec.Containers = core_util.UpsertContainer(in.Spec.Template.Spec.Containers, core.Container{
 				Name: "exporter",
 				Args: append([]string{
-					fmt.Sprintf("--web.listen-address=:%v", memcached.Spec.Monitor.Prometheus.Exporter.Port),
-					fmt.Sprintf("--web.telemetry-path=%v", memcached.StatsService().Path()),
-				}, memcached.Spec.Monitor.Prometheus.Exporter.Args...),
+					fmt.Sprintf("--web.listen-address=:%v", db.Spec.Monitor.Prometheus.Exporter.Port),
+					fmt.Sprintf("--web.telemetry-path=%v", db.StatsService().Path()),
+				}, db.Spec.Monitor.Prometheus.Exporter.Args...),
 				Image:           memcachedVersion.Spec.Exporter.Image,
 				ImagePullPolicy: core.PullIfNotPresent,
 				Ports: []core.ContainerPort{
 					{
-						Name:          api.PrometheusExporterPortName,
+						Name:          mona.PrometheusExporterPortName,
 						Protocol:      core.ProtocolTCP,
-						ContainerPort: memcached.Spec.Monitor.Prometheus.Exporter.Port,
+						ContainerPort: db.Spec.Monitor.Prometheus.Exporter.Port,
 					},
 				},
-				Env:             memcached.Spec.Monitor.Prometheus.Exporter.Env,
-				Resources:       memcached.Spec.Monitor.Prometheus.Exporter.Resources,
-				SecurityContext: memcached.Spec.Monitor.Prometheus.Exporter.SecurityContext,
+				Env:             db.Spec.Monitor.Prometheus.Exporter.Env,
+				Resources:       db.Spec.Monitor.Prometheus.Exporter.Resources,
+				SecurityContext: db.Spec.Monitor.Prometheus.Exporter.SecurityContext,
 			})
 		}
-		in = upsertUserEnv(in, memcached)
-		in = upsertCustomConfig(in, memcached)
-		in = upsertDataVolume(in, memcached, memcachedVersion.Spec.DB.Image)
+		in = upsertUserEnv(in, db)
+		in = upsertCustomConfig(in, db)
+		in = upsertDataVolume(in, db, memcachedVersion.Spec.DB.Image)
 
-		in.Spec.Template.Spec.NodeSelector = memcached.Spec.PodTemplate.Spec.NodeSelector
-		in.Spec.Template.Spec.Affinity = memcached.Spec.PodTemplate.Spec.Affinity
-		if memcached.Spec.PodTemplate.Spec.SchedulerName != "" {
-			in.Spec.Template.Spec.SchedulerName = memcached.Spec.PodTemplate.Spec.SchedulerName
+		in.Spec.Template.Spec.NodeSelector = db.Spec.PodTemplate.Spec.NodeSelector
+		in.Spec.Template.Spec.Affinity = db.Spec.PodTemplate.Spec.Affinity
+		if db.Spec.PodTemplate.Spec.SchedulerName != "" {
+			in.Spec.Template.Spec.SchedulerName = db.Spec.PodTemplate.Spec.SchedulerName
 		}
-		in.Spec.Template.Spec.Tolerations = memcached.Spec.PodTemplate.Spec.Tolerations
-		in.Spec.Template.Spec.ImagePullSecrets = memcached.Spec.PodTemplate.Spec.ImagePullSecrets
-		in.Spec.Template.Spec.PriorityClassName = memcached.Spec.PodTemplate.Spec.PriorityClassName
-		in.Spec.Template.Spec.Priority = memcached.Spec.PodTemplate.Spec.Priority
-		in.Spec.Template.Spec.SecurityContext = memcached.Spec.PodTemplate.Spec.SecurityContext
-		in.Spec.Template.Spec.ServiceAccountName = memcached.Spec.PodTemplate.Spec.ServiceAccountName
+		in.Spec.Template.Spec.Tolerations = db.Spec.PodTemplate.Spec.Tolerations
+		in.Spec.Template.Spec.ImagePullSecrets = db.Spec.PodTemplate.Spec.ImagePullSecrets
+		in.Spec.Template.Spec.PriorityClassName = db.Spec.PodTemplate.Spec.PriorityClassName
+		in.Spec.Template.Spec.Priority = db.Spec.PodTemplate.Spec.Priority
+		in.Spec.Template.Spec.SecurityContext = db.Spec.PodTemplate.Spec.SecurityContext
+		in.Spec.Template.Spec.ServiceAccountName = db.Spec.PodTemplate.Spec.ServiceAccountName
 		in.Spec.Strategy = apps.DeploymentStrategy{
 			Type: apps.RollingUpdateDeploymentStrategyType,
 		}

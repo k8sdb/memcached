@@ -3,9 +3,9 @@ module kubedb.dev/memcached
 go 1.12
 
 require (
-	github.com/appscode/go v0.0.0-20200928211031-cc0c23082d91
+	github.com/appscode/go v0.0.0-20201006035845-a0302ac8e3d3
 	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
-	github.com/codeskyblue/go-sh v0.0.0-20190412065543-76bd3d59ff27
+	github.com/codeskyblue/go-sh v0.0.0-20200712050446-30169cf553fe
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.8.1
 	github.com/pkg/errors v0.9.1
@@ -22,10 +22,10 @@ require (
 	k8s.io/kube-aggregator v0.18.9
 	kmodules.xyz/client-go v0.0.0-20201007024140-3223988adf40
 	kmodules.xyz/custom-resources v0.0.0-20200922210108-70f2815a43bb
-	kmodules.xyz/monitoring-agent-api v0.0.0-20200922204510-b8b5610e5385
+	kmodules.xyz/monitoring-agent-api v0.0.0-20201007104803-408a1ff2de8d
 	kmodules.xyz/offshoot-api v0.0.0-20200922211229-36acc531abab
 	kmodules.xyz/webhook-runtime v0.0.0-20200922211931-8337935590de
-	kubedb.dev/apimachinery v0.14.0-beta.3.0.20200929172147-60ada14c6d75
+	kubedb.dev/apimachinery v0.14.0-beta.3.0.20201007105016-e562def953d6
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d

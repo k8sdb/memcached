@@ -54,7 +54,7 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		memcached.Status = mc.Status
 	}
 
-	// Ensure ClusterRoles for deployments
+	// Ensure ClusterRoles for stss
 	if err := c.ensureRBACStuff(memcached); err != nil {
 		return err
 	}
@@ -65,8 +65,8 @@ func (c *Controller) create(memcached *api.Memcached) error {
 		return err
 	}
 
-	// ensure database Deployment
-	vt2, err := c.ensureDeployment(memcached)
+	// ensure database StatefulSet
+	vt2, err := c.ensureStatefulSet(memcached)
 	if err != nil {
 		return err
 	}

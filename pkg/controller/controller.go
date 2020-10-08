@@ -76,7 +76,7 @@ func New(
 		Controller: &amc.Controller{
 			ClientConfig:     clientConfig,
 			Client:           client,
-			DBClient:        extClient,
+			DBClient:         extClient,
 			CRDClient:        crdClient,
 			AppCatalogClient: appCatalogClient,
 			ClusterTopology:  topology,

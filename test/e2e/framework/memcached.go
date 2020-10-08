@@ -135,7 +135,7 @@ func (f *Framework) CleanMemcached() {
 	}
 }
 
-func (f *Framework) EvictPodsFromDeployment(meta metav1.ObjectMeta) error {
+func (f *Framework) EvictPodsFromStatefulSet(meta metav1.ObjectMeta) error {
 	var err error
 	deployName := meta.Name
 	//if PDB is not found, send error

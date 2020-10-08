@@ -11,7 +11,7 @@ function cleanup_test_stuff() {
   set +eou pipefail
 
   # Workload Descriptions if the test fails
-  cowsay -f tux "Describe Deployment"
+  cowsay -f tux "Describe StatefulSet"
   kubectl describe deploy -n kube-system -l app=$APP_LABEL
 
   cowsay -f tux "Describe Replica Set"

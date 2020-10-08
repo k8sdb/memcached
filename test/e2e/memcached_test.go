@@ -189,7 +189,7 @@ var _ = Describe("Memcached", func() {
 				createAndWaitForRunning()
 				//Evict Memcached pod
 				By("Try to evict a pod")
-				err := f.EvictPodsFromDeployment(memcached.ObjectMeta)
+				err := f.EvictPodsFromStatefulSet(memcached.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})

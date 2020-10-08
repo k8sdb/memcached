@@ -40,19 +40,19 @@ const (
 	DATA_SOURCE_VOLUME_MOUNTPATH   = "/data"
 )
 
-func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType, error) {
-	if err := c.checkDeployment(memcached); err != nil {
+func (c *Controller) ensureStatefulSet(memcached *api.Memcached) (kutil.VerbType, error) {
+	if err := c.checkStatefulSet(memcached); err != nil {
 		return kutil.VerbUnchanged, err
 	}
 
 	// Create statefulSet for Memcached database
-	deployment, vt, err := c.createDeployment(memcached)
+	sts, vt, err := c.createStatefulSet(memcached)
 	if err != nil {
 		return kutil.VerbUnchanged, err
 	}
-	// Check Deployment Pod status
+	// Check StatefulSet Pod status
 	if vt != kutil.VerbUnchanged {
-		if err := app_util.WaitUntilDeploymentReady(context.TODO(), c.Client, deployment.ObjectMeta); err != nil {
+		if err := app_util.WaitUntilStatefulSetReady(context.TODO(), c.Client, sts.ObjectMeta); err != nil {
 			return kutil.VerbUnchanged, err
 		}
 		c.Recorder.Eventf(
@@ -65,30 +65,30 @@ func (c *Controller) ensureDeployment(memcached *api.Memcached) (kutil.VerbType,
 	}
 
 	// ensure pdb
-	if err := c.CreateDeploymentPodDisruptionBudget(deployment); err != nil {
+	if err := c.CreateStatefulSetPodDisruptionBudget(sts); err != nil {
 		return vt, err
 	}
 	return vt, nil
 }
 
-func (c *Controller) checkDeployment(memcached *api.Memcached) error {
-	// Deployment for Memcached database
-	deployment, err := c.Client.AppsV1().Deployments(memcached.Namespace).Get(context.TODO(), memcached.OffshootName(), metav1.GetOptions{})
+func (c *Controller) checkStatefulSet(memcached *api.Memcached) error {
+	// StatefulSet for Memcached database
+	sts, err := c.Client.AppsV1().StatefulSets(memcached.Namespace).Get(context.TODO(), memcached.OffshootName(), metav1.GetOptions{})
 	if err != nil {
 		if kerr.IsNotFound(err) {
 			return nil
 		}
 		return err
 	}
-	if deployment.Labels[api.LabelDatabaseKind] != api.ResourceKindMemcached ||
-		deployment.Labels[api.LabelDatabaseName] != memcached.Name {
-		return fmt.Errorf(`intended deployment "%v/%v" already exists`, memcached.Namespace, memcached.OffshootName())
+	if sts.Labels[api.LabelDatabaseKind] != api.ResourceKindMemcached ||
+		sts.Labels[api.LabelDatabaseName] != memcached.Name {
+		return fmt.Errorf(`intended sts "%v/%v" already exists`, memcached.Namespace, memcached.OffshootName())
 	}
 	return nil
 }
 
-func (c *Controller) createDeployment(db *api.Memcached) (*apps.Deployment, kutil.VerbType, error) {
-	deploymentMeta := metav1.ObjectMeta{
+func (c *Controller) createStatefulSet(db *api.Memcached) (*apps.StatefulSet, kutil.VerbType, error) {
+	stsMeta := metav1.ObjectMeta{
 		Name:      db.OffshootName(),
 		Namespace: db.Namespace,
 	}
@@ -100,7 +100,7 @@ func (c *Controller) createDeployment(db *api.Memcached) (*apps.Deployment, kuti
 		return nil, kutil.VerbUnchanged, err
 	}
 
-	return app_util.CreateOrPatchDeployment(context.TODO(), c.Client, deploymentMeta, func(in *apps.Deployment) *apps.Deployment {
+	return app_util.CreateOrPatchStatefulSet(context.TODO(), c.Client, stsMeta, func(in *apps.StatefulSet) *apps.StatefulSet {
 		in.Labels = db.OffshootLabels()
 		in.Annotations = db.Spec.PodTemplate.Controller.Annotations
 		core_util.EnsureOwnerReference(&in.ObjectMeta, owner)
@@ -166,8 +166,8 @@ func (c *Controller) createDeployment(db *api.Memcached) (*apps.Deployment, kuti
 		in.Spec.Template.Spec.Priority = db.Spec.PodTemplate.Spec.Priority
 		in.Spec.Template.Spec.SecurityContext = db.Spec.PodTemplate.Spec.SecurityContext
 		in.Spec.Template.Spec.ServiceAccountName = db.Spec.PodTemplate.Spec.ServiceAccountName
-		in.Spec.Strategy = apps.DeploymentStrategy{
-			Type: apps.RollingUpdateDeploymentStrategyType,
+		in.Spec.UpdateStrategy = apps.StatefulSetUpdateStrategy{
+			Type: apps.OnDeleteStatefulSetStrategyType,
 		}
 
 		return in
@@ -175,20 +175,20 @@ func (c *Controller) createDeployment(db *api.Memcached) (*apps.Deployment, kuti
 }
 
 // upsertUserEnv add/overwrite env from user provided env in crd spec
-func upsertUserEnv(deployment *apps.Deployment, memcached *api.Memcached) *apps.Deployment {
-	for i, container := range deployment.Spec.Template.Spec.Containers {
+func upsertUserEnv(sts *apps.StatefulSet, memcached *api.Memcached) *apps.StatefulSet {
+	for i, container := range sts.Spec.Template.Spec.Containers {
 		if container.Name == api.ResourceSingularMemcached {
-			deployment.Spec.Template.Spec.Containers[i].Env = core_util.UpsertEnvVars(container.Env, memcached.Spec.PodTemplate.Spec.Env...)
-			return deployment
+			sts.Spec.Template.Spec.Containers[i].Env = core_util.UpsertEnvVars(container.Env, memcached.Spec.PodTemplate.Spec.Env...)
+			return sts
 		}
 	}
-	return deployment
+	return sts
 }
 
 // upsertCustomConfig insert custom configuration volume if provided.
-func upsertCustomConfig(deployment *apps.Deployment, memcached *api.Memcached) *apps.Deployment {
+func upsertCustomConfig(sts *apps.StatefulSet, memcached *api.Memcached) *apps.StatefulSet {
 	if memcached.Spec.ConfigSource != nil {
-		for i, container := range deployment.Spec.Template.Spec.Containers {
+		for i, container := range sts.Spec.Template.Spec.Containers {
 			if container.Name == api.ResourceSingularMemcached {
 
 				configSourceVolumeMount := core.VolumeMount{
@@ -198,47 +198,47 @@ func upsertCustomConfig(deployment *apps.Deployment, memcached *api.Memcached) *
 
 				volumeMounts := container.VolumeMounts
 				volumeMounts = core_util.UpsertVolumeMount(volumeMounts, configSourceVolumeMount)
-				deployment.Spec.Template.Spec.Containers[i].VolumeMounts = volumeMounts
+				sts.Spec.Template.Spec.Containers[i].VolumeMounts = volumeMounts
 
 				configSourceVolume := core.Volume{
 					Name:         CONFIG_SOURCE_VOLUME,
 					VolumeSource: *memcached.Spec.ConfigSource,
 				}
 
-				volumes := deployment.Spec.Template.Spec.Volumes
+				volumes := sts.Spec.Template.Spec.Volumes
 				volumes = core_util.UpsertVolume(volumes, configSourceVolume)
-				deployment.Spec.Template.Spec.Volumes = volumes
+				sts.Spec.Template.Spec.Volumes = volumes
 				break
 			}
 		}
 	}
 
-	return deployment
+	return sts
 }
 
 // upsertDataVolume insert additional data volume if provided and ensures that it is useable
 // by memcached.
-func upsertDataVolume(deployment *apps.Deployment, memcached *api.Memcached, memcachedImage string) *apps.Deployment {
+func upsertDataVolume(sts *apps.StatefulSet, memcached *api.Memcached, memcachedImage string) *apps.StatefulSet {
 	if memcached.Spec.DataVolume != nil {
 		dataVolumeMount := core.VolumeMount{
 			Name:      DATA_SOURCE_VOLUME,
 			MountPath: DATA_SOURCE_VOLUME_MOUNTPATH,
 		}
 
-		for i, container := range deployment.Spec.Template.Spec.Containers {
+		for i, container := range sts.Spec.Template.Spec.Containers {
 			if container.Name == api.ResourceSingularMemcached {
 				volumeMounts := container.VolumeMounts
 				volumeMounts = core_util.UpsertVolumeMount(volumeMounts, dataVolumeMount)
-				deployment.Spec.Template.Spec.Containers[i].VolumeMounts = volumeMounts
+				sts.Spec.Template.Spec.Containers[i].VolumeMounts = volumeMounts
 
 				dataVolume := core.Volume{
 					Name:         DATA_SOURCE_VOLUME,
 					VolumeSource: *memcached.Spec.DataVolume,
 				}
 
-				volumes := deployment.Spec.Template.Spec.Volumes
+				volumes := sts.Spec.Template.Spec.Volumes
 				volumes = core_util.UpsertVolume(volumes, dataVolume)
-				deployment.Spec.Template.Spec.Volumes = volumes
+				sts.Spec.Template.Spec.Volumes = volumes
 				break
 			}
 		}
@@ -251,7 +251,7 @@ func upsertDataVolume(deployment *apps.Deployment, memcached *api.Memcached, mem
 		// image as the daemon.
 		var root int64
 		privileged := true
-		deployment.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(deployment.Spec.Template.Spec.InitContainers,
+		sts.Spec.Template.Spec.InitContainers = core_util.UpsertContainer(sts.Spec.Template.Spec.InitContainers,
 			core.Container{
 				Name:            "data-volume-owner",
 				Image:           memcachedImage,
@@ -271,5 +271,5 @@ func upsertDataVolume(deployment *apps.Deployment, memcached *api.Memcached, mem
 			})
 	}
 
-	return deployment
+	return sts
 }

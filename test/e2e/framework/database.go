@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	"kubedb.dev/memcached/pkg/controller"
 
 	"github.com/bradfitz/gomemcache/memcache"

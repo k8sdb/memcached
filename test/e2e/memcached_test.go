@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
-	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha1/util"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
+	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha2/util"
 	"kubedb.dev/memcached/test/e2e/framework"
 
 	"github.com/appscode/go/crypto/rand"
@@ -189,7 +189,7 @@ var _ = Describe("Memcached", func() {
 				createAndWaitForRunning()
 				//Evict Memcached pod
 				By("Try to evict a pod")
-				err := f.EvictPodsFromDeployment(memcached.ObjectMeta)
+				err := f.EvictPodsFromStatefulSet(memcached.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -461,7 +461,7 @@ var _ = Describe("Memcached", func() {
 					createAndWaitForRunning()
 
 					By("Updating Envs")
-					_, _, err := util.PatchMemcached(context.TODO(), f.DBClient().KubedbV1alpha1(), memcached, func(in *api.Memcached) *api.Memcached {
+					_, _, err := util.PatchMemcached(context.TODO(), f.DBClient().KubedbV1alpha2(), memcached, func(in *api.Memcached) *api.Memcached {
 						in.Spec.PodTemplate.Spec.Env = []core.EnvVar{
 							{
 								Name:  "TEST_ENV",

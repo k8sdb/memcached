@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
-	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha1"
+	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	extFake "kubedb.dev/apimachinery/client/clientset/versioned/fake"
 	"kubedb.dev/apimachinery/client/clientset/versioned/scheme"
 
@@ -85,7 +85,7 @@ func TestMemcachedValidator_Admit(t *testing.T) {
 			req.OldObject.Raw = oldObjJS
 
 			if c.heatUp {
-				if _, err := validator.extClient.KubedbV1alpha1().Memcacheds(c.namespace).Create(context.TODO(), &c.object, metaV1.CreateOptions{}); err != nil && !kerr.IsAlreadyExists(err) {
+				if _, err := validator.extClient.KubedbV1alpha2().Memcacheds(c.namespace).Create(context.TODO(), &c.object, metaV1.CreateOptions{}); err != nil && !kerr.IsAlreadyExists(err) {
 					t.Errorf(err.Error())
 				}
 			}
@@ -263,7 +263,7 @@ func editSpecVersion(old api.Memcached) api.Memcached {
 
 func editStatus(old api.Memcached) api.Memcached {
 	old.Status = api.MemcachedStatus{
-		Phase: api.DatabasePhaseCreating,
+		Phase: api.DatabasePhaseProvisioning,
 	}
 	return old
 }
@@ -272,7 +272,7 @@ func editSpecMonitor(old api.Memcached) api.Memcached {
 	old.Spec.Monitor = &mona.AgentSpec{
 		Agent: mona.AgentPrometheusBuiltin,
 		Prometheus: &mona.PrometheusSpec{
-			Exporter: &mona.PrometheusExporterSpec{
+			Exporter: mona.PrometheusExporterSpec{
 				Port: 5670,
 			},
 		},

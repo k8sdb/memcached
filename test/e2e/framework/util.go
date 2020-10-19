@@ -52,29 +52,29 @@ type MemcdConfig struct {
 	Alias string
 }
 
-func (fi *Invocation) GetCustomConfig(configs []MemcdConfig) *core.ConfigMap {
+func (fi *Invocation) GetCustomConfig(configs []MemcdConfig) *core.Secret {
 	data := make([]string, 0)
 	for _, cfg := range configs {
 		data = append(data, cfg.Name+" = "+cfg.Value)
 	}
-	return &core.ConfigMap{
+	return &core.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fi.app,
 			Namespace: fi.namespace,
 		},
-		Data: map[string]string{
+		StringData: map[string]string{
 			"memcached.conf": strings.Join(data, "\n"),
 		},
 	}
 }
 
-func (fi *Invocation) CreateConfigMap(obj *core.ConfigMap) error {
-	_, err := fi.kubeClient.CoreV1().ConfigMaps(obj.Namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
+func (fi *Invocation) CreateSecret(obj *core.Secret) error {
+	_, err := fi.kubeClient.CoreV1().Secrets(obj.Namespace).Create(context.TODO(), obj, metav1.CreateOptions{})
 	return err
 }
 
-func (fi *Invocation) DeleteConfigMap(meta metav1.ObjectMeta) error {
-	err := fi.kubeClient.CoreV1().ConfigMaps(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInForeground())
+func (fi *Invocation) DeleteSecret(meta metav1.ObjectMeta) error {
+	err := fi.kubeClient.CoreV1().Secrets(meta.Namespace).Delete(context.TODO(), meta.Name, meta_util.DeleteInForeground())
 	if err != nil && !kerr.IsNotFound(err) {
 		return err
 	}

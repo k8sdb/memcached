@@ -493,7 +493,7 @@ var _ = Describe("Memcached", func() {
 
 			Context("from configMap", func() {
 				var (
-					userConfig *core.ConfigMap
+					userConfig *core.Secret
 				)
 
 				BeforeEach(func() {
@@ -502,7 +502,7 @@ var _ = Describe("Memcached", func() {
 
 				AfterEach(func() {
 					By("Deleting configMap: " + userConfig.Name)
-					err := f.DeleteConfigMap(userConfig.ObjectMeta)
+					err := f.DeleteSecret(userConfig.ObjectMeta)
 					Expect(err).NotTo(HaveOccurred())
 				})
 
@@ -512,15 +512,11 @@ var _ = Describe("Memcached", func() {
 					}
 
 					By("Creating configMap: " + userConfig.Name)
-					err := f.CreateConfigMap(userConfig)
+					err := f.CreateSecret(userConfig)
 					Expect(err).NotTo(HaveOccurred())
 
-					memcached.Spec.ConfigSource = &core.VolumeSource{
-						ConfigMap: &core.ConfigMapVolumeSource{
-							LocalObjectReference: core.LocalObjectReference{
-								Name: userConfig.Name,
-							},
-						},
+					memcached.Spec.ConfigSecret = &core.LocalObjectReference{
+						Name: userConfig.Name,
 					}
 
 					// Create Memcached
@@ -560,19 +556,19 @@ var _ = Describe("Memcached", func() {
 			}
 
 			var (
-				userConfig *core.ConfigMap
+				userConfig *core.Secret
 			)
 
 			BeforeEach(func() {
 				userConfig = f.GetCustomConfig(customConfigs)
 				By("Creating configMap: " + userConfig.Name)
-				err := f.CreateConfigMap(userConfig)
+				err := f.CreateSecret(userConfig)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
 			AfterEach(func() {
 				By("Deleting configMap: " + userConfig.Name)
-				err := f.DeleteConfigMap(userConfig.ObjectMeta)
+				err := f.DeleteSecret(userConfig.ObjectMeta)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -581,12 +577,8 @@ var _ = Describe("Memcached", func() {
 					Skip(skipMessage)
 				}
 
-				memcached.Spec.ConfigSource = &core.VolumeSource{
-					ConfigMap: &core.ConfigMapVolumeSource{
-						LocalObjectReference: core.LocalObjectReference{
-							Name: userConfig.Name,
-						},
-					},
+				memcached.Spec.ConfigSecret = &core.LocalObjectReference{
+					Name: userConfig.Name,
 				}
 				memcached.Spec.DataVolume = dataVolume
 

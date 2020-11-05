@@ -10,7 +10,7 @@ require (
 	github.com/onsi/gomega v1.8.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus-operator/prometheus-operator v0.42.0
-	github.com/spf13/cobra v1.0.0
+	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	go.bytebuilders.dev/license-verifier v0.3.0
 	go.bytebuilders.dev/license-verifier/kubernetes v0.3.0
@@ -20,12 +20,12 @@ require (
 	k8s.io/apiserver v0.18.9
 	k8s.io/client-go v0.18.9
 	k8s.io/kube-aggregator v0.18.9
-	kmodules.xyz/client-go v0.0.0-20201027113349-01a6d453d836
-	kmodules.xyz/custom-resources v0.0.0-20201008012351-6d8090f759d4
-	kmodules.xyz/monitoring-agent-api v0.0.0-20201022103441-f51a42fb9ac8
-	kmodules.xyz/offshoot-api v0.0.0-20201027212804-f5e6dc573558
-	kmodules.xyz/webhook-runtime v0.0.0-20200922211931-8337935590de
-	kubedb.dev/apimachinery v0.14.1-0.20201030200006-92af33bde233
+	kmodules.xyz/client-go v0.0.0-20201105071625-0b277310b9b8
+	kmodules.xyz/custom-resources v0.0.0-20201105075444-3c6af51b4f79
+	kmodules.xyz/monitoring-agent-api v0.0.0-20201105074044-be7a1044891a
+	kmodules.xyz/offshoot-api v0.0.0-20201105074700-8675f5f686f2
+	kmodules.xyz/webhook-runtime v0.0.0-20201105073856-2dc7382b88c6
+	kubedb.dev/apimachinery v0.14.1-0.20201105213239-f74effb9db37
 )
 
 replace bitbucket.org/ww/goautoneg => gomodules.xyz/goautoneg v0.0.0-20120707110453-a547fc61f48d

@@ -28,8 +28,8 @@ import (
 	mcAdmsn "kubedb.dev/memcached/pkg/admission"
 	"kubedb.dev/memcached/pkg/controller"
 
-	"github.com/appscode/go/types"
 	license "go.bytebuilders.dev/license-verifier/kubernetes"
+	"gomodules.xyz/pointer"
 	admission "k8s.io/api/admission/v1beta1"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -217,7 +217,7 @@ func (c completedConfig) New() (*MemcachedServer, error) {
 							Namespace: "default",
 						},
 						Spec: api.MemcachedSpec{
-							Replicas: types.Int32P(-1),
+							Replicas: pointer.Int32P(-1),
 						},
 					}, ctx.StopCh)
 					if err := xray.IsActive(context.TODO()); err != nil {

@@ -23,8 +23,8 @@ import (
 
 	"kubedb.dev/memcached/pkg/cmds"
 
-	"github.com/appscode/go/runtime"
 	"github.com/spf13/cobra/doc"
+	"gomodules.xyz/runtime"
 	utilRuntime "k8s.io/apimachinery/pkg/util/runtime"
 )
 

@@ -24,10 +24,10 @@ import (
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha2/util"
 	"kubedb.dev/memcached/test/e2e/framework"
 
-	"github.com/appscode/go/crypto/rand"
-	"github.com/appscode/go/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gomodules.xyz/pointer"
+	"gomodules.xyz/x/crypto/rand"
 	core "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	kerr "k8s.io/apimachinery/pkg/api/errors"
@@ -185,7 +185,7 @@ var _ = Describe("Memcached", func() {
 		Context("PDB", func() {
 			It("should evict successfully", func() {
 				// Create Memcached
-				memcached.Spec.Replicas = types.Int32P(3)
+				memcached.Spec.Replicas = pointer.Int32P(3)
 				createAndWaitForRunning()
 				//Evict Memcached pod
 				By("Try to evict a pod")

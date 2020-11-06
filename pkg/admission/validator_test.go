@@ -26,7 +26,7 @@ import (
 	extFake "kubedb.dev/apimachinery/client/clientset/versioned/fake"
 	"kubedb.dev/apimachinery/client/clientset/versioned/scheme"
 
-	"github.com/appscode/go/types"
+	"gomodules.xyz/pointer"
 	admission "k8s.io/api/admission/v1beta1"
 	authenticationV1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/core/v1"
@@ -239,7 +239,7 @@ func sampleMemcached() api.Memcached {
 		},
 		Spec: api.MemcachedSpec{
 			Version:           "1.5.4",
-			Replicas:          types.Int32P(3),
+			Replicas:          pointer.Int32P(3),
 			TerminationPolicy: api.TerminationPolicyDoNotTerminate,
 			DataVolume: &v1.VolumeSource{
 				CSI: &v1.CSIVolumeSource{

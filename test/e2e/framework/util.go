@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"strings"
 
+	"kubedb.dev/apimachinery/apis/kubedb"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 
 	shell "github.com/codeskyblue/go-sh"
@@ -85,8 +86,9 @@ func (f *Invocation) EventuallyWipedOut(meta metav1.ObjectMeta) GomegaAsyncAsser
 	return Eventually(
 		func() error {
 			labelMap := map[string]string{
-				api.LabelDatabaseName: meta.Name,
-				api.LabelDatabaseKind: api.ResourceKindMemcached,
+				meta_util.NameLabelKey:      api.Memcached{}.ResourceFQN(),
+				meta_util.InstanceLabelKey:  meta.Name,
+				meta_util.ManagedByLabelKey: kubedb.GroupName,
 			}
 			labelSelector := labels.SelectorFromSet(labelMap)
 

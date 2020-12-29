@@ -20,6 +20,7 @@ import (
 	"context"
 
 	catalog "kubedb.dev/apimachinery/apis/catalog/v1alpha1"
+	"kubedb.dev/apimachinery/apis/kubedb"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	cs "kubedb.dev/apimachinery/client/clientset/versioned"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha2/util"
@@ -42,6 +43,7 @@ import (
 	reg_util "kmodules.xyz/client-go/admissionregistration/v1beta1"
 	apiextensions "kmodules.xyz/client-go/apiextensions"
 	core_util "kmodules.xyz/client-go/core/v1"
+	meta_util "kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/queue"
 	appcat "kmodules.xyz/custom-resources/apis/appcatalog/v1alpha1"
 	appcat_cs "kmodules.xyz/custom-resources/client/clientset/versioned"
@@ -86,7 +88,8 @@ func New(
 		Config:     opt,
 		promClient: promClient,
 		selector: labels.SelectorFromSet(map[string]string{
-			api.LabelDatabaseKind: api.ResourceKindMemcached,
+			meta_util.NameLabelKey:      api.Memcached{}.ResourceFQN(),
+			meta_util.ManagedByLabelKey: kubedb.GroupName,
 		}),
 	}
 }

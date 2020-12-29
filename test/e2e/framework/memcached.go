@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"kubedb.dev/apimachinery/apis/kubedb"
 	api "kubedb.dev/apimachinery/apis/kubedb/v1alpha2"
 	"kubedb.dev/apimachinery/client/clientset/versioned/typed/kubedb/v1alpha2/util"
 
@@ -148,8 +149,9 @@ func (f *Framework) EvictPodsFromStatefulSet(meta metav1.ObjectMeta) error {
 	}
 
 	podSelector := labels.Set{
-		api.LabelDatabaseKind: api.ResourceKindMemcached,
-		api.LabelDatabaseName: meta.GetName(),
+		meta_util.NameLabelKey:      api.Memcached{}.ResourceFQN(),
+		meta_util.InstanceLabelKey:  meta.GetName(),
+		meta_util.ManagedByLabelKey: kubedb.GroupName,
 	}
 	pods, err := f.kubeClient.CoreV1().Pods(meta.Namespace).List(context.TODO(), metav1.ListOptions{LabelSelector: podSelector.String()})
 	if err != nil {

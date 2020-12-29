@@ -36,7 +36,7 @@ import (
 	utilRuntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	clientSetScheme "k8s.io/client-go/kubernetes/scheme"
-	"kmodules.xyz/client-go/meta"
+	meta_util "kmodules.xyz/client-go/meta"
 	mona "kmodules.xyz/monitoring-agent-api/api/v1"
 )
 
@@ -65,11 +65,11 @@ func TestMemcachedValidator_Admit(t *testing.T) {
 			)
 			validator.client = fake.NewSimpleClientset()
 
-			objJS, err := meta.MarshalToJson(&c.object, api.SchemeGroupVersion)
+			objJS, err := meta_util.MarshalToJson(&c.object, api.SchemeGroupVersion)
 			if err != nil {
 				panic(err)
 			}
-			oldObjJS, err := meta.MarshalToJson(&c.oldObject, api.SchemeGroupVersion)
+			oldObjJS, err := meta_util.MarshalToJson(&c.oldObject, api.SchemeGroupVersion)
 			if err != nil {
 				panic(err)
 			}
@@ -234,7 +234,7 @@ func sampleMemcached() api.Memcached {
 			Name:      "foo",
 			Namespace: "default",
 			Labels: map[string]string{
-				api.LabelDatabaseKind: api.ResourceKindMemcached,
+				meta_util.NameLabelKey: api.Memcached{}.ResourceFQN(),
 			},
 		},
 		Spec: api.MemcachedSpec{

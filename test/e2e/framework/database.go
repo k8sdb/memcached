@@ -56,13 +56,14 @@ func (f *Framework) GetMemcacheClient(meta metav1.ObjectMeta) (*memcache.Client,
 		return nil, err
 	}
 
-	f.tunnel = portforward.NewTunnel(
-		f.kubeClient.CoreV1().RESTClient(),
-		f.restConfig,
-		memcached.Namespace,
-		clientPod.Name,
-		11211,
-	)
+	f.tunnel = portforward.NewTunnel(portforward.TunnelOptions{
+		Client:    f.kubeClient.CoreV1().RESTClient(),
+		Config:    f.restConfig,
+		Resource:  "pods",
+		Name:      clientPod.Name,
+		Namespace: memcached.Namespace,
+		Remote:    11211,
+	})
 
 	if err := f.tunnel.ForwardPort(); err != nil {
 		return nil, err

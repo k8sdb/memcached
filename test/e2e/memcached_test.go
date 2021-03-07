@@ -439,7 +439,7 @@ var _ = Describe("Memcached", func() {
 
 			Context("Allowed Envs", func() {
 				It("should run successfully with given Env", func() {
-					memcached.Spec.PodTemplate.Spec.Env = envList
+					memcached.Spec.PodTemplate.Spec.Container.Env = envList
 					createAndWaitForRunning()
 
 					By("Checking pod started with given envs")
@@ -457,12 +457,12 @@ var _ = Describe("Memcached", func() {
 
 			Context("Update Envs", func() {
 				It("should not reject to update Env", func() {
-					memcached.Spec.PodTemplate.Spec.Env = envList
+					memcached.Spec.PodTemplate.Spec.Container.Env = envList
 					createAndWaitForRunning()
 
 					By("Updating Envs")
 					_, _, err := util.PatchMemcached(context.TODO(), f.DBClient().KubedbV1alpha2(), memcached, func(in *api.Memcached) *api.Memcached {
-						in.Spec.PodTemplate.Spec.Env = []core.EnvVar{
+						in.Spec.PodTemplate.Spec.Container.Env = []core.EnvVar{
 							{
 								Name:  "TEST_ENV",
 								Value: "patched",

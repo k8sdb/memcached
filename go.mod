@@ -13,7 +13,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	go.bytebuilders.dev/license-verifier v0.9.1
 	go.bytebuilders.dev/license-verifier/kubernetes v0.9.1
-	gomodules.xyz/password-generator v0.2.7 // indirect
 	gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
 	gomodules.xyz/runtime v0.2.0
 	gomodules.xyz/x v0.0.3

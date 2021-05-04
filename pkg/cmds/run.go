@@ -22,7 +22,7 @@ import (
 	"kubedb.dev/memcached/pkg/cmds/server"
 
 	"github.com/spf13/cobra"
-	"gomodules.xyz/x/log"
+	"k8s.io/klog/v2"
 	"kmodules.xyz/client-go/meta"
 	"kmodules.xyz/client-go/tools/cli"
 )
@@ -38,7 +38,7 @@ func NewCmdRun(version string, out, errOut io.Writer, stopCh <-chan struct{}) *c
 			cli.SendPeriodicAnalytics(c, version)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			log.Infoln("Starting memcached-server...")
+			klog.Infoln("Starting memcached-server...")
 
 			if err := o.Complete(); err != nil {
 				return err

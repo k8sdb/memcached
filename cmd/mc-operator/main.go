@@ -20,16 +20,18 @@ import (
 	"kubedb.dev/memcached/pkg/cmds"
 
 	_ "go.bytebuilders.dev/license-verifier/info"
-	"gomodules.xyz/kglog"
+	"gomodules.xyz/logs"
 	_ "k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/klog/v2"
 )
 
 func main() {
-	kglog.InitLogs()
-	defer kglog.FlushLogs()
-	if err := cmds.NewRootCmd(Version).Execute(); err != nil {
+	rootCmd := cmds.NewRootCmd(Version)
+	logs.Init(rootCmd, true)
+	defer logs.FlushLogs()
+
+	if err := rootCmd.Execute(); err != nil {
 		klog.Fatal(err)
 	}
 }
